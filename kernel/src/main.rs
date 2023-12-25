@@ -54,39 +54,23 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
         );
     }
 
-    kernel::init();
-
-    // MEMORY + ALLOCATOR
-    use x86_64::VirtAddr;
-    use kernel::allocator;
-    use kernel::memory::{self, BootInfoFrameAllocator, AcpiHandler};
-
-    let phys_mem_offset = VirtAddr::new(
+    kernel::init(
         boot_info
             .physical_memory_offset
             .clone()
             .into_option()
-            .unwrap()
+            .unwrap(),
+        boot_info
+            .rsdp_addr
+            .clone()
+            .into_option()
+            .unwrap(),
+        &boot_info.memory_regions,
     );
-    let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
 
-    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-
-    // ACPI
-    if let bootloader_api::info::Optional::Some(rsdp) = boot_info.rsdp_addr {
-        let acpi_handler = memory::AcpiHandler::new(
-            boot_info
-                .physical_memory_offset
-                .clone()
-                .into_option()
-                .unwrap() as usize
-        );
-        let acpi_tables = unsafe { acpi::AcpiTables::from_rsdp(acpi_handler, rsdp as usize) }.unwrap();
-        log::info!("{:#?}", acpi_tables.platform_info().unwrap());
+    loop {
+        kernel::hlt_loop()
     }
-
-    loop {}
 }
 
 #[panic_handler]
