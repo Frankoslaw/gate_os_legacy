@@ -6,7 +6,10 @@ use x86_64::{
     PhysAddr,
 };
 
+
 pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
+    log::info!("[MEMORY] initialized");
+
     let level_4_table = active_level_4_table(physical_memory_offset);
     OffsetPageTable::new(level_4_table, physical_memory_offset)
 }
@@ -55,4 +58,39 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
         self.next += 1;
         frame
     }
+}
+
+
+use core::ptr::NonNull;
+use acpi::PhysicalMapping;
+
+
+#[derive(Clone)]
+pub struct AcpiHandler {
+    offset: usize,
+}
+
+impl AcpiHandler {
+    pub const fn new(offset: usize) -> Self {
+        Self { offset }
+    }
+}
+
+impl acpi::AcpiHandler for AcpiHandler {
+    unsafe fn map_physical_region<T>(
+        &self,
+        physical_address: usize,
+        size: usize,
+    ) -> acpi::PhysicalMapping<Self, T> {
+        PhysicalMapping::new(
+            physical_address,
+            NonNull::new((physical_address + self.offset) as *mut T)
+                .expect("Failed to map virtual address for ACPI"),
+            size,
+            size,
+            self.clone(),
+        )
+    }
+
+    fn unmap_physical_region<T>(_region: &PhysicalMapping<Self, T>) {}
 }

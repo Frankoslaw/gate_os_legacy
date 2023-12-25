@@ -5,13 +5,10 @@ extern crate alloc;
 
 use core::panic::PanicInfo;
 
-use x86_64::VirtAddr;
-
 use bootloader_api::{entry_point, BootInfo, info::FrameBufferInfo};
 use bootloader_api::config::{BootloaderConfig, Mapping};
 use log::LevelFilter;
 use kernel::logger;
-use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
 
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
@@ -44,10 +41,6 @@ pub fn init_logger(
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {    
-    use kernel::allocator;
-    use kernel::memory::{self, BootInfoFrameAllocator};
-
-
     if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
         let fb_info = framebuffer.info().clone();
         let fb_buffer = framebuffer.buffer_mut();
@@ -59,40 +52,38 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
             true,
             true
         );
+    }
 
-        log::info!("Hello world!");
-        kernel::init();
-        
-        let phys_mem_offset = VirtAddr::new(
+    kernel::init();
+
+    // MEMORY + ALLOCATOR
+    use x86_64::VirtAddr;
+    use kernel::allocator;
+    use kernel::memory::{self, BootInfoFrameAllocator, AcpiHandler};
+
+    let phys_mem_offset = VirtAddr::new(
+        boot_info
+            .physical_memory_offset
+            .clone()
+            .into_option()
+            .unwrap()
+    );
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
+
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+
+    // ACPI
+    if let bootloader_api::info::Optional::Some(rsdp) = boot_info.rsdp_addr {
+        let acpi_handler = memory::AcpiHandler::new(
             boot_info
                 .physical_memory_offset
                 .clone()
                 .into_option()
-                .unwrap(),
+                .unwrap() as usize
         );
-        let mut mapper = unsafe { memory::init(phys_mem_offset) };
-        let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
-    
-        allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-
-
-        let heap_value = Box::new(41);
-        log::info!("heap_value at {:p}", heap_value);
-
-        let mut vec = Vec::new();
-        for i in 0..500 {
-            vec.push(i);
-        }
-        log::info!("vec at {:p}", vec.as_slice());
-
-        let reference_counted = Rc::new(vec![1, 2, 3]);
-        let cloned_reference = reference_counted.clone();
-        log::info!("current reference count is {}", Rc::strong_count(&cloned_reference));
-        core::mem::drop(reference_counted);
-        log::info!("reference count is {} now", Rc::strong_count(&cloned_reference));
-
-
-        log::info!("It did not crash!");
+        let acpi_tables = unsafe { acpi::AcpiTables::from_rsdp(acpi_handler, rsdp as usize) }.unwrap();
+        log::info!("{:#?}", acpi_tables.platform_info().unwrap());
     }
 
     loop {}

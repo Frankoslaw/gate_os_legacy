@@ -62,5 +62,7 @@ pub fn init_heap(
         ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE);
     }
 
+    log::info!("[ALLOCATOR] initialized");
+
     Ok(())
 }
