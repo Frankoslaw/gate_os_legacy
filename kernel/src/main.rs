@@ -5,6 +5,8 @@ extern crate alloc;
 
 use core::panic::PanicInfo;
 
+use x86_64::VirtAddr;
+
 use bootloader_api::{entry_point, BootInfo, info::FrameBufferInfo};
 use bootloader_api::config::{BootloaderConfig, Mapping};
 use log::LevelFilter;
@@ -41,6 +43,8 @@ pub fn init_logger(
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {    
+    kernel::init();
+
     if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
         let fb_info = framebuffer.info().clone();
         let fb_buffer = framebuffer.buffer_mut();
@@ -54,23 +58,34 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
         );
     }
 
-    kernel::init(
+    use kernel::allocator;
+    use kernel::memory::{self, BootInfoFrameAllocator};
+
+    use kernel::task::{executor::Executor, Task};
+    log::info!("Hello World{}", "!");
+
+    let phys_mem_offset = VirtAddr::new(
         boot_info
             .physical_memory_offset
             .clone()
             .into_option()
             .unwrap(),
-        boot_info
-            .rsdp_addr
-            .clone()
-            .into_option()
-            .unwrap(),
-        &boot_info.memory_regions,
     );
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
 
-    loop {
-        kernel::hlt_loop()
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+
+    let mut executor = Executor::new();
+    executor.spawn(Task::new(kernel::task::keyboard::print_keypresses()));
+
+    async fn test_task() {
+        loop {
+            kernel::print!("LOL ");
+        }
     }
+    executor.spawn(Task::new(test_task()));
+    executor.run()
 }
 
 #[panic_handler]
