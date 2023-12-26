@@ -2,10 +2,18 @@ use alloc::task::Wake;
 use alloc::{collections::BTreeMap, sync::Arc};
 use core::task::Waker;
 use core::task::{Context, Poll};
+use conquer_once::spin::OnceCell;
 
 use crossbeam_queue::ArrayQueue;
 
 use super::{Task, TaskId};
+
+static TASK_QUEUE_SIZE: usize = 100;
+static TASK_QUEUE: OnceCell<ArrayQueue<Task>> = OnceCell::uninit();
+
+pub fn spawn(task: Task) {
+    let _ = TASK_QUEUE.get().unwrap().push(task);
+}
 
 pub struct Executor {
     tasks: BTreeMap<TaskId, Task>,
@@ -15,19 +23,30 @@ pub struct Executor {
 
 impl Executor {
     pub fn new() -> Self {
+        TASK_QUEUE.get_or_init(|| {
+            ArrayQueue::new(TASK_QUEUE_SIZE)
+        });
+
         Executor {
             tasks: BTreeMap::new(),
-            task_queue: Arc::new(ArrayQueue::new(100)),
+            task_queue: Arc::new(ArrayQueue::new(TASK_QUEUE_SIZE)),
             waker_cache: BTreeMap::new(),
         }
     }
 
-    pub fn spawn(&mut self, task: Task) {
+    fn spawn(&mut self, task: Task) {
         let task_id = task.id;
         if self.tasks.insert(task.id, task).is_some() {
             panic!("task with same ID already in tasks");
         }
         self.task_queue.push(task_id).expect("queue full");
+    }
+
+    fn spawn_avalible_tasks(&mut self) {
+        let tasks = TASK_QUEUE.try_get().expect("Task queue not initialized");
+        if let Some(task) = tasks.pop() {
+            self.spawn(task);
+        }
     }
 
     fn run_ready_tasks(&mut self) {
@@ -58,6 +77,7 @@ impl Executor {
 
     pub fn run(&mut self) -> ! {
         loop {
+            self.spawn_avalible_tasks();
             self.run_ready_tasks();
             self.sleep_if_idle();
         }

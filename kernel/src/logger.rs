@@ -58,11 +58,11 @@ impl log::Log for LockedLogger {
     fn log(&self, record: &log::Record) {
         if let Some(framebuffer) = &self.framebuffer {
             let mut framebuffer = framebuffer.lock();
-            writeln!(framebuffer, "{:5}: {}", record.level(), record.args()).unwrap();
+            writeln!(framebuffer, "{:5}: {}\r", record.level(), record.args()).unwrap();
         }
         if let Some(serial) = &self.serial {
             let mut serial = serial.lock();
-            writeln!(serial, "{:5}: {}", record.level(), record.args()).unwrap();
+            writeln!(serial, "{:5}: {}\r", record.level(), record.args()).unwrap();
         }
     }
 
@@ -91,6 +91,6 @@ macro_rules! print {
 
 #[macro_export]
 macro_rules! println {
-    () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+    () => ($crate::print!("\n\r"));
+    ($($arg:tt)*) => ($crate::print!("{}\n\r", format_args!($($arg)*)));
 }

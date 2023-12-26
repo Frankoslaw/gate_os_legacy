@@ -52,16 +52,14 @@ impl Stream for PacketStream {
 
 pub async fn print_mouse_position() {
     fn handler(state: MouseState) {
-        let pixels_moved_on_x = state.get_x();
-        let pixels_moved_on_y = state.get_y();
+        let _pixels_moved_on_x = state.get_x();
+        let _pixels_moved_on_y = state.get_y();
 
-        // TODO handle mouse inputs
-        // The "state" can get how many pixels the mouse has moved from its current position
-        // so somekind of global state is needed to store the last position of the mouse
-        // the "state" also has functions for left and right mouse buttons up and down
+        // log::info!("x: {}, y: {}", pixels_moved_on_x, pixels_moved_on_y)
     }
     let mut packets = PacketStream::new();
     let mut mouse = Mouse::new();
+
     mouse.set_on_complete(handler);
     log::info!("Mouse Task Started.");
 

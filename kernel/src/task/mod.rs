@@ -6,10 +6,10 @@ use core::{future::Future, pin::Pin};
 pub mod executor;
 pub mod keyboard;
 pub mod mouse;
-pub mod simple_executor;
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct TaskId(u64);
+pub struct TaskId(u64);
 
 impl TaskId {
     fn new() -> Self {
@@ -22,6 +22,9 @@ pub struct Task {
     id: TaskId,
     future: Pin<Box<dyn Future<Output = ()>>>,
 }
+
+unsafe impl Send for Task {}
+unsafe impl Sync for Task {}
 
 impl Task {
     pub fn new(future: impl Future<Output = ()> + 'static) -> Task {

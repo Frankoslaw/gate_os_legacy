@@ -50,12 +50,12 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
         init_logger(
             fb_buffer,
             fb_info,
-            LevelFilter::Info,
+            LevelFilter::Error,
             true,
             true
         );
     }
-
+    kernel::println!();
     // MEMORY
     use kernel::memory;
 
@@ -87,13 +87,19 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     interrupts::init_apic(apic_info);
 
     // TASK
-    use kernel::task::{executor::Executor, Task, keyboard, mouse};
+    use kernel::task::{self, executor::Executor, Task, keyboard, mouse};
     let mut executor = Executor::new();
 
     log::info!("Task Executor initialized");
     log::info!("--------------------Start Executing Tasks--------------------");
-    executor.spawn(Task::new(keyboard::print_keypresses()));
-    executor.spawn(Task::new(mouse::print_mouse_position()));
+    task::executor::spawn(Task::new(keyboard::print_keypresses()));
+    task::executor::spawn(Task::new(mouse::print_mouse_position()));
+
+    async fn manual_spawn_task() {
+        log::info!("POGGERS!");
+    }
+
+    let _ = task::executor::spawn(Task::new(manual_spawn_task()));
 
     executor.run()
 }
