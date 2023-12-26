@@ -65,18 +65,18 @@ use core::ptr::NonNull;
 use acpi::PhysicalMapping;
 
 
-#[derive(Clone)]
-pub struct AcpiHandler {
+#[derive(Clone, Debug)]
+pub struct AcpiHandlerImpl {
     offset: usize,
 }
 
-impl AcpiHandler {
+impl AcpiHandlerImpl {
     pub const fn new(offset: usize) -> Self {
         Self { offset }
     }
 }
 
-impl acpi::AcpiHandler for AcpiHandler {
+impl acpi::AcpiHandler for AcpiHandlerImpl {
     unsafe fn map_physical_region<T>(
         &self,
         physical_address: usize,

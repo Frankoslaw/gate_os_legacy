@@ -10,6 +10,7 @@ extern crate alloc;
 pub mod framebuffer;
 pub mod serial;
 pub mod memory;
+pub mod acpi;
 pub mod allocator;
 pub mod interrupts;
 pub mod gdt;
@@ -27,8 +28,7 @@ pub fn init(physical_memory_offset: u64, rsdp_addr: u64, memory_regions: &'stati
 
     // MEMORY + ALLOCATOR
     use x86_64::VirtAddr;
-    use crate::allocator;
-    use crate::memory::{self, BootInfoFrameAllocator, AcpiHandler};
+    use crate::memory::{BootInfoFrameAllocator, AcpiHandlerImpl};
 
     let phys_mem_offset = VirtAddr::new(physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
@@ -37,9 +37,8 @@ pub fn init(physical_memory_offset: u64, rsdp_addr: u64, memory_regions: &'stati
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
     // ACPI
-    let acpi_handler = memory::AcpiHandler::new(physical_memory_offset as usize);
-    let acpi_tables = unsafe { acpi::AcpiTables::from_rsdp(acpi_handler, rsdp_addr as usize) }.unwrap();
-    log::info!("{:#?}", acpi_tables.platform_info().unwrap());
+    let acpi_handler = AcpiHandlerImpl::new(physical_memory_offset as usize);
+    unsafe { acpi::initialize(acpi_handler, rsdp_addr as usize) }
 
     // INTERRUPTS
     interrupts::init_idt();

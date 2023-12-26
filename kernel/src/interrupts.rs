@@ -20,7 +20,7 @@ pub struct Cli;
 
 impl Cli {
     pub fn new() -> Self {
-        let cli = !x86_64::instructions::interrupts::are_enabled();
+        let _cli = !x86_64::instructions::interrupts::are_enabled();
         x86_64::instructions::interrupts::disable();
         // let mut cpu = Cpu::current().state().lock();
         // if cpu.thread_state.ncli == 0 {
@@ -48,18 +48,36 @@ impl Drop for Cli {
     }
 }
 
+const PIC_8259_IRQ_OFFSET: u32 = 32; // first 32 entries are reserved by CPU
+const IRQ_TIMER: u32 = PIC_8259_IRQ_OFFSET + 0;
+const IRQ_KBD: u32 = PIC_8259_IRQ_OFFSET + 1; // Keyboard on PS/2 port
+const IRQ_COM1: u32 = PIC_8259_IRQ_OFFSET + 4; // First serial port
+
 lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint
-            .set_handler_fn(breakpoint_handler);
+            .set_handler_fn(breakpoint_handler)
+            .disable_interrupts(true);
         unsafe {
             idt.double_fault
                 .set_handler_fn(double_fault_handler)
-                .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
+                .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX)
+                .disable_interrupts(true);
         }
         idt.page_fault
-            .set_handler_fn(page_fault_handler);
+            .set_handler_fn(page_fault_handler)
+            .disable_interrupts(true);
+        idt[IRQ_TIMER as usize]
+            .set_handler_fn(timer_handler)
+            .disable_interrupts(true);
+        idt[IRQ_KBD as usize]
+            .set_handler_fn(kbd_handler)
+            .disable_interrupts(true);
+        idt[IRQ_COM1 as usize]
+            .set_handler_fn(com1_handler)
+            .disable_interrupts(true);
+
         idt
     };
 }
@@ -85,6 +103,30 @@ extern "x86-interrupt" fn page_fault_handler(
     log::error!("Error Code: {:?}", error_code);
     log::error!("{:#?}", stack_frame);
     hlt_loop();
+}
+
+extern "x86-interrupt" fn timer_handler(_stack_frame: InterruptStackFrame) {
+    TICKS.fetch_add(1, Ordering::SeqCst);
+    //task::scheduler().elapse();
+    // unsafe { LAPIC.set_eoi(0) };
+    //task::scheduler().r#yield();
+    log::info!("TEST");
+}
+
+extern "x86-interrupt" fn kbd_handler(_stack_frame: InterruptStackFrame) {
+    // let v = unsafe { Port::new(0x60).read() };
+    // console::accept_raw_input(console::RawInput::Kbd(v));
+    // unsafe { LAPIC.set_eoi(0) };
+    log::info!("TEST");
+}
+
+extern "x86-interrupt" fn com1_handler(_stack_frame: InterruptStackFrame) {
+    // use crate::devices::serial::default_port;
+
+    // let v = default_port().receive();
+    // console::accept_raw_input(console::RawInput::Com1(v));
+    // unsafe { LAPIC.set_eoi(0) };
+    log::info!("TEST");
 }
 
 pub fn init_idt() {
