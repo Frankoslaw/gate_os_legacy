@@ -1,46 +1,41 @@
-use crate::memory::AcpiHandlerImpl;
-use acpi::platform::interrupt::Apic;
-use acpi::platform::{PmTimer, ProcessorInfo};
-use acpi::{AcpiTables, PlatformInfo};
-use conquer_once::spin::OnceCell;
+use core::ptr::NonNull;
+use acpi::{ AcpiTables, AcpiHandler, PhysicalMapping, platform::interrupt::Apic };
+use x86_64::{ VirtAddr, structures::paging::Page };
+use crate::memory;
 
+#[derive(Clone)]
+pub struct ACPIHandler;
 
-static PLATFORM_INFO: OnceCell<PlatformInfo> = OnceCell::uninit();
+impl AcpiHandler for ACPIHandler {
+    unsafe fn map_physical_region<T>(&self, physical_address: usize, size: usize) -> PhysicalMapping<Self, T> {
+        let virtual_address = VirtAddr::new(physical_address as u64);
+        memory::identity_map(physical_address as u64, None);
+        PhysicalMapping::new(physical_address, NonNull::new(virtual_address.as_mut_ptr()).unwrap(), size, size, Self)
+    }
 
-pub unsafe fn initialize(handler: AcpiHandlerImpl, rsdp: usize) {
-    // https://wiki.osdev.org/MADT
-
-    PLATFORM_INFO.get_or_init(|| {
-        AcpiTables::from_rsdp(handler, rsdp)
-            .unwrap()
-            .platform_info()
-            .unwrap()
-    });
-}
-
-fn platform_info() -> &'static PlatformInfo {
-    PLATFORM_INFO
-        .get()
-        .expect("acpi::platform_info is called before acpi::initialize")
-}
-
-pub fn apic_info() -> &'static Apic {
-    match platform_info().interrupt_model {
-        acpi::InterruptModel::Apic(ref apic) => apic,
-        _ => panic!("Could not find APIC"),
+    fn unmap_physical_region<T>(region: &PhysicalMapping<Self, T>) {
+        let virtual_address = VirtAddr::new(region.virtual_start().as_ptr() as u64);
+        let page: Page = Page::containing_address(virtual_address);
+        memory::unmap(page);
     }
 }
 
-pub fn processor_info() -> &'static ProcessorInfo {
-    platform_info()
-        .processor_info
-        .as_ref()
-        .expect("Could not find processor information")
-}
-
-pub fn pm_timer() -> &'static PmTimer {
-    platform_info()
-        .pm_timer
-        .as_ref()
-        .expect("Could not find ACPI PM Timer")
+// Root System Description Pointer
+pub fn init(rsdp_addr: u64) -> Apic {
+    let acpi_tables = unsafe { AcpiTables::from_rsdp(ACPIHandler, rsdp_addr as usize).expect("Failed to get ACPI Tables") };
+    let platform_info = acpi_tables.platform_info().unwrap();
+    let processor_info = platform_info.processor_info.expect("Failed to get processor info");
+    log::info!("---------------ACPI---------------");
+    log::info!("Power Profile: {:?}", platform_info.power_profile);
+    log::info!("Boot Processor: {:?}", processor_info.boot_processor);
+    log::info!("Application Processors: {:?}", processor_info.application_processors);
+    log::info!("---------------ACPI---------------");
+    match platform_info.interrupt_model {
+        acpi::InterruptModel::Apic(acpi_info) => {
+            return acpi_info;
+        }
+        _ => {
+            panic!("Failed to get interrupt model from ACPI");
+        }
+    }
 }

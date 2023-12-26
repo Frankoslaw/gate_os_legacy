@@ -43,8 +43,6 @@ pub fn init_logger(
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {    
-    kernel::init();
-
     if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
         let fb_info = framebuffer.info().clone();
         let fb_buffer = framebuffer.buffer_mut();
@@ -58,11 +56,8 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
         );
     }
 
-    use kernel::allocator;
-    use kernel::memory::{self, BootInfoFrameAllocator};
-
-    use kernel::task::{executor::Executor, Task};
-    log::info!("Hello World{}", "!");
+    // MEMORY
+    use kernel::memory;
 
     let phys_mem_offset = VirtAddr::new(
         boot_info
@@ -71,20 +66,35 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
             .into_option()
             .unwrap(),
     );
-    let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_regions) };
 
-    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+    memory::init(phys_mem_offset.as_u64(), &boot_info.memory_regions);
 
+    // ALLOCATOR
+    use kernel::allocator;
+    allocator::init_heap().expect("heap initialization failed");
+
+    // ACPI
+    use kernel::acpi;
+    let rsdp_addr = boot_info.rsdp_addr.into_option().expect("Failed to get RSDP address");
+    let apic_info = acpi::init(rsdp_addr);
+
+    // GDT
+    use kernel::gdt;
+    gdt::init();
+
+    // INTERRUPTS
+    use kernel::interrupts;
+    interrupts::init_apic(apic_info);
+
+    // TASK
+    use kernel::task::{executor::Executor, Task, keyboard, mouse};
     let mut executor = Executor::new();
-    executor.spawn(Task::new(kernel::task::keyboard::print_keypresses()));
 
-    async fn test_task() {
-        loop {
-            kernel::print!("LOL ");
-        }
-    }
-    executor.spawn(Task::new(test_task()));
+    log::info!("Task Executor initialized");
+    log::info!("--------------------Start Executing Tasks--------------------");
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.spawn(Task::new(mouse::print_mouse_position()));
+
     executor.run()
 }
 

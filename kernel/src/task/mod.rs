@@ -5,6 +5,7 @@ use core::{future::Future, pin::Pin};
 
 pub mod executor;
 pub mod keyboard;
+pub mod mouse;
 pub mod simple_executor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -29,9 +30,6 @@ impl Task {
             future: Box::pin(future),
         }
     }
-}
-
-impl Task {
     fn poll(&mut self, context: &mut Context) -> Poll<()> {
         self.future.as_mut().poll(context)
     }

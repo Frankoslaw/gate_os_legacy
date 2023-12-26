@@ -14,7 +14,8 @@ usize_conversions = "0.2.0"
 volatile = "0.5.1"
 
 pic8259 = "0.10.2"
-pc-keyboard = "0.6.1"
+pc-keyboard = "0.7.0"
+ps2-mouse = "0.1.4"
 x86 = "0.52.0"
 x86_64 = "0.14.11"
 # xmas-elf = "0.9.1"
@@ -24,6 +25,7 @@ log = "0.4.20"
 
 linked_list_allocator = "0.10.5"
 acpi = "4.1.1"
+x2apic = "0.4"
 
 [dependencies.noto-sans-mono-bitmap]
 version = "0.2.0"
