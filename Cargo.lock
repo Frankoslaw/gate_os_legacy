@@ -310,6 +310,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-new"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d150dea618e920167e5973d70ae6ece4385b7164e0d799fe7c122dd0a5d912ad"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "errno"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -579,6 +590,7 @@ dependencies = [
  "bootloader_api",
  "conquer-once",
  "crossbeam-queue",
+ "derive-new",
  "futures-util",
  "lazy_static",
  "linked_list_allocator",

@@ -71,6 +71,11 @@ fn run(line: &str) {
             "CPU: {}",
             cpuid.get_processor_brand_string().unwrap().as_str()
         );
+    } else if line == "pci" {
+        let pci_devices = unsafe { crate::pci::pcie_list_device() };
+        pci_devices.iter().for_each(|device| {
+            crate::println!("pci device: vendor id: {:#x}, device id: {:#x}", device.vendor, device.device);
+        });
     } else {
         println!("unknown command");
     }

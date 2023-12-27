@@ -91,11 +91,6 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     task::executor::spawn(Task::new(keyboard::print_keypresses()));
     task::executor::spawn(Task::new(mouse::print_mouse_position()));
 
-    async fn manual_spawn_task() {
-        log::info!("POGGERS!");
-    }
-
-    let _ = task::executor::spawn(Task::new(manual_spawn_task()));
 
     executor.run()
 }

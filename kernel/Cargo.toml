@@ -12,6 +12,7 @@ lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 spinning_top = "0.3.0"
 usize_conversions = "0.2.0"
 volatile = "0.5.1"
+derive-new = {version = "0.6.0", default-features = false}
 
 pc-keyboard = "0.7.0"
 ps2-mouse = "0.1.4"
