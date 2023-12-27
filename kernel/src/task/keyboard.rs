@@ -1,12 +1,13 @@
-use conquer_once::spin::OnceCell;
-use crossbeam_queue::ArrayQueue;
-use pc_keyboard::{ Keyboard, layouts, ScancodeSet1, HandleControl, DecodedKey, KeyCode };
-use core::{ pin::Pin, task::{ Poll, Context } };
-use futures_util::{ stream::Stream, task::AtomicWaker, StreamExt };
-use alloc::string::String;
-use crate::task::{self, Task};
 use crate::{print, println};
-
+use alloc::string::String;
+use conquer_once::spin::OnceCell;
+use core::{
+    pin::Pin,
+    task::{Context, Poll},
+};
+use crossbeam_queue::ArrayQueue;
+use futures_util::{stream::Stream, task::AtomicWaker, StreamExt};
+use pc_keyboard::{layouts, DecodedKey, HandleControl, KeyCode, Keyboard, ScancodeSet1};
 
 pub static SCANCODE_QUEUE: OnceCell<ArrayQueue<u8>> = OnceCell::uninit();
 static WAKER: AtomicWaker = AtomicWaker::new();
@@ -19,7 +20,9 @@ pub struct ScancodeStream {
 
 impl ScancodeStream {
     pub fn new() -> Self {
-        SCANCODE_QUEUE.try_init_once(|| ArrayQueue::new(KEYBOARD_QUEUE_SIZE)).expect("Scancode queue already initialized.");
+        SCANCODE_QUEUE
+            .try_init_once(|| ArrayQueue::new(KEYBOARD_QUEUE_SIZE))
+            .expect("Scancode queue already initialized.");
         ScancodeStream { _private: () }
     }
 }
@@ -27,7 +30,9 @@ impl Stream for ScancodeStream {
     type Item = u8;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<u8>> {
-        let queue = SCANCODE_QUEUE.try_get().expect("Scancode queue not initialized");
+        let queue = SCANCODE_QUEUE
+            .try_get()
+            .expect("Scancode queue not initialized");
         if let Some(scancode) = queue.pop() {
             return Poll::Ready(Some(scancode));
         }
@@ -37,7 +42,7 @@ impl Stream for ScancodeStream {
                 WAKER.take();
                 Poll::Ready(Some(scancode))
             }
-            None => { Poll::Pending }
+            None => Poll::Pending,
         }
     }
 }
@@ -55,30 +60,29 @@ pub fn add_scancode(scancode: u8) {
 }
 
 fn run(line: &str) {
-    if line == "panic" {
-        task::executor::spawn(Task::new(async {
-            panic!("a panic!");
-        }));
-    }
-    else if line == "loop" {
-        task::executor::spawn(Task::new(async {
-            loop {}
-        }));
-    }
-    else if line == "test" {
-        task::executor::spawn(Task::new(async {
-            println!("Hello world!");
-        }));
-    }
-    else {
+    if line == "hello" {
+        println!("Hello world!");
+    } else if line == "neofetch" {
+        use raw_cpuid::CpuId;
+
+        let cpuid = CpuId::new();
+        println!("OS: GATE OS v0.0.1");
+        println!(
+            "CPU: {}",
+            cpuid.get_processor_brand_string().unwrap().as_str()
+        );
+    } else {
         println!("unknown command");
     }
 }
 
-
 pub async fn print_keypresses() {
     let mut scancodes = ScancodeStream::new();
-    let mut keyboard = Keyboard::new(ScancodeSet1::new(), layouts::Us104Key, HandleControl::Ignore);
+    let mut keyboard = Keyboard::new(
+        ScancodeSet1::new(),
+        layouts::Us104Key,
+        HandleControl::Ignore,
+    );
 
     log::info!("Keyboard Task Started.");
 

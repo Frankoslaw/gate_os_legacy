@@ -20,7 +20,7 @@ fn main() {
             .unwrap();
 
         println!("cargo:rustc-env=UEFI_PATH={}", uefi_path.display());
-    }else{
+    } else {
         // create a BIOS disk image
         let bios_path = out_dir.join("bios.img");
         bootloader::BiosBoot::new(&kernel)

@@ -3,22 +3,21 @@
 
 extern crate alloc;
 
+#[allow(unused_imports)]
 use core::panic::PanicInfo;
 
 use x86_64::VirtAddr;
 
-use bootloader_api::{entry_point, BootInfo, info::FrameBufferInfo};
 use bootloader_api::config::{BootloaderConfig, Mapping};
-use log::LevelFilter;
+use bootloader_api::{entry_point, info::FrameBufferInfo, BootInfo};
 use kernel::logger;
-
+use log::LevelFilter;
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
     config.mappings.physical_memory = Some(Mapping::Dynamic);
     config
 };
-
 
 entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
@@ -42,18 +41,12 @@ pub fn init_logger(
     log::info!("Framebuffer info: {:?}", info);
 }
 
-fn kernel_main(boot_info: &'static mut BootInfo) -> ! {    
+fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
         let fb_info = framebuffer.info().clone();
         let fb_buffer = framebuffer.buffer_mut();
 
-        init_logger(
-            fb_buffer,
-            fb_info,
-            LevelFilter::Error,
-            true,
-            true
-        );
+        init_logger(fb_buffer, fb_info, LevelFilter::Error, true, true);
     }
     kernel::println!();
     // MEMORY
@@ -75,7 +68,10 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
 
     // ACPI
     use kernel::acpi;
-    let rsdp_addr = boot_info.rsdp_addr.into_option().expect("Failed to get RSDP address");
+    let rsdp_addr = boot_info
+        .rsdp_addr
+        .into_option()
+        .expect("Failed to get RSDP address");
     let apic_info = acpi::init(rsdp_addr);
 
     // GDT
@@ -87,7 +83,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     interrupts::init_apic(apic_info);
 
     // TASK
-    use kernel::task::{self, executor::Executor, Task, keyboard, mouse};
+    use kernel::task::{self, executor::Executor, keyboard, mouse, Task};
     let mut executor = Executor::new();
 
     log::info!("Task Executor initialized");
@@ -104,6 +100,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     executor.run()
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     log::error!("{}", info);

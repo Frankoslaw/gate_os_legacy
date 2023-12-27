@@ -5,7 +5,6 @@ use conquer_once::spin::OnceCell;
 use core::fmt::Write;
 use spinning_top::Spinlock;
 
-
 pub static LOGGER: OnceCell<LockedLogger> = OnceCell::uninit();
 
 pub struct LockedLogger {

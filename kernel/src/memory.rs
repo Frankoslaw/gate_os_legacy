@@ -1,10 +1,11 @@
 use bootloader_api::info::{MemoryRegionKind, MemoryRegions};
 use conquer_once::spin::OnceCell;
 use spinning_top::Spinlock;
-use x86_64::{ VirtAddr, PhysAddr };
-use x86_64::structures::paging::{ PageTable, PhysFrame, Size4KiB, FrameAllocator, OffsetPageTable, PageTableFlags, Mapper, Page };
 use x86_64::registers::control::Cr3;
-
+use x86_64::structures::paging::{
+    FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame, Size4KiB,
+};
+use x86_64::{PhysAddr, VirtAddr};
 
 pub static MEM_MGR: OnceCell<Spinlock<MemoryManager>> = OnceCell::uninit();
 
@@ -15,11 +16,16 @@ pub struct MemoryManager {
 
 impl MemoryManager {
     pub fn identity_map(&mut self, physical_address: u64, flags: Option<PageTableFlags>) {
-        let flags = flags.unwrap_or_else(|| { PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE });
+        let flags = flags.unwrap_or_else(|| {
+            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE
+        });
         let physical_address = PhysAddr::new(physical_address);
         let physical_frame: PhysFrame = PhysFrame::containing_address(physical_address);
         unsafe {
-            self.mapper.identity_map(physical_frame, flags, &mut self.allocator).expect("Failed to identity map").flush();
+            self.mapper
+                .identity_map(physical_frame, flags, &mut self.allocator)
+                .expect("Failed to identity map")
+                .flush();
         }
     }
     pub fn range_map(&mut self, start: VirtAddr, size: u64, flags: Option<PageTableFlags>) {
@@ -28,10 +34,18 @@ impl MemoryManager {
         let heap_end_page = Page::containing_address(end);
         let page_range = Page::range_inclusive(heap_start_page, heap_end_page);
         for page in page_range {
-            let frame = self.allocator.allocate_frame().expect("Failed to allocate for range map");
-            let flags = flags.unwrap_or_else(|| { PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE });
+            let frame = self
+                .allocator
+                .allocate_frame()
+                .expect("Failed to allocate for range map");
+            let flags = flags.unwrap_or_else(|| {
+                PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE
+            });
             unsafe {
-                self.mapper.map_to(page, frame, flags, &mut self.allocator).expect("Failed to map range").flush();
+                self.mapper
+                    .map_to(page, frame, flags, &mut self.allocator)
+                    .expect("Failed to map range")
+                    .flush();
             }
         }
     }
@@ -43,13 +57,25 @@ unsafe impl Send for MemoryManager {}
 unsafe impl Sync for MemoryManager {}
 
 pub fn range_map(start: VirtAddr, size: u64, flags: Option<PageTableFlags>) {
-    MEM_MGR.get().expect("Failed to get MEM_MGR").lock().range_map(start, size, flags);
+    MEM_MGR
+        .get()
+        .expect("Failed to get MEM_MGR")
+        .lock()
+        .range_map(start, size, flags);
 }
 pub fn identity_map(physical_address: u64, flags: Option<PageTableFlags>) {
-    MEM_MGR.get().expect("Failed to get MEM_MGR").lock().identity_map(physical_address, flags);
+    MEM_MGR
+        .get()
+        .expect("Failed to get MEM_MGR")
+        .lock()
+        .identity_map(physical_address, flags);
 }
 pub fn unmap(page: Page) {
-    MEM_MGR.get().expect("Failed to get MEM_MGR").lock().unmap(page);
+    MEM_MGR
+        .get()
+        .expect("Failed to get MEM_MGR")
+        .lock()
+        .unmap(page);
 }
 
 pub fn init(physical_memory_offset: u64, memory_regions: &'static MemoryRegions) {
@@ -108,39 +134,4 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
         self.next += 1;
         frame
     }
-}
-
-
-use core::ptr::NonNull;
-use acpi::PhysicalMapping;
-
-
-#[derive(Clone, Debug)]
-pub struct AcpiHandlerImpl {
-    offset: usize,
-}
-
-impl AcpiHandlerImpl {
-    pub const fn new(offset: usize) -> Self {
-        Self { offset }
-    }
-}
-
-impl acpi::AcpiHandler for AcpiHandlerImpl {
-    unsafe fn map_physical_region<T>(
-        &self,
-        physical_address: usize,
-        size: usize,
-    ) -> acpi::PhysicalMapping<Self, T> {
-        PhysicalMapping::new(
-            physical_address,
-            NonNull::new((physical_address + self.offset) as *mut T)
-                .expect("Failed to map virtual address for ACPI"),
-            size,
-            size,
-            self.clone(),
-        )
-    }
-
-    fn unmap_physical_region<T>(_region: &PhysicalMapping<Self, T>) {}
 }

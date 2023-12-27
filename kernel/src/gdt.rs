@@ -1,10 +1,10 @@
 // Global Descriptn Table
 use lazy_static::lazy_static;
-use x86_64::VirtAddr;
-use x86_64::structures::tss::TaskStateSegment;
-use x86_64::structures::gdt::{ GlobalDescriptorTable, Descriptor, SegmentSelector };
+use x86_64::instructions::segmentation::{Segment, CS, DS, ES, FS, GS, SS};
 use x86_64::instructions::tables::load_tss;
-use x86_64::instructions::segmentation::{ CS, DS, ES, GS, FS, SS, Segment };
+use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector};
+use x86_64::structures::tss::TaskStateSegment;
+use x86_64::VirtAddr;
 
 /// Double fault interrupt stack table index
 pub const DOUBLE_FAULT_IST_INDEX: usize = 0;
@@ -39,7 +39,14 @@ lazy_static! {
         let code_selector = gdt.add_entry(Descriptor::kernel_code_segment());
         let data_selector = gdt.add_entry(Descriptor::kernel_data_segment());
         let tss_selector = gdt.add_entry(Descriptor::tss_segment(&TSS));
-        Gdt { gdt, selector: Selectors { code_selector, data_selector, tss_selector } }
+        Gdt {
+            gdt,
+            selector: Selectors {
+                code_selector,
+                data_selector,
+                tss_selector,
+            },
+        }
     };
 }
 
@@ -53,7 +60,7 @@ pub fn init() {
         GS::set_reg(GDT.selector.data_selector);
         FS::set_reg(GDT.selector.data_selector);
         SS::set_reg(GDT.selector.data_selector);
-        
+
         load_tss(GDT.selector.tss_selector);
     }
 }

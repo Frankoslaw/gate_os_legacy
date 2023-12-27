@@ -7,7 +7,6 @@ pub mod executor;
 pub mod keyboard;
 pub mod mouse;
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TaskId(u64);
 

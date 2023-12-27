@@ -1,8 +1,8 @@
 use alloc::task::Wake;
 use alloc::{collections::BTreeMap, sync::Arc};
+use conquer_once::spin::OnceCell;
 use core::task::Waker;
 use core::task::{Context, Poll};
-use conquer_once::spin::OnceCell;
 
 use crossbeam_queue::ArrayQueue;
 
@@ -23,9 +23,7 @@ pub struct Executor {
 
 impl Executor {
     pub fn new() -> Self {
-        TASK_QUEUE.get_or_init(|| {
-            ArrayQueue::new(TASK_QUEUE_SIZE)
-        });
+        TASK_QUEUE.get_or_init(|| ArrayQueue::new(TASK_QUEUE_SIZE));
 
         Executor {
             tasks: BTreeMap::new(),

@@ -17,7 +17,6 @@ pub mod memory;
 pub mod serial;
 pub mod task;
 
-
 pub fn hlt_loop() -> ! {
     loop {
         x86_64::instructions::hlt();

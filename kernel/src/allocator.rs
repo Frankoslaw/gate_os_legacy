@@ -1,11 +1,9 @@
+use crate::memory;
+use spinning_top::{guard::SpinlockGuard, Spinlock};
 use x86_64::{
-    structures::paging::{
-        mapper::MapToError, PageTableFlags, Size4KiB,
-    },
+    structures::paging::{mapper::MapToError, PageTableFlags, Size4KiB},
     VirtAddr,
 };
-use spinning_top::{Spinlock, guard::SpinlockGuard};
-use crate::memory;
 
 use crate::allocator::fixed_size_block::FixedSizeBlockAllocator;
 

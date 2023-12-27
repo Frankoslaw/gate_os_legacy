@@ -1,8 +1,11 @@
-use core::{ pin::Pin, task::{ Poll, Context } };
 use conquer_once::spin::OnceCell;
+use core::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 use crossbeam_queue::ArrayQueue;
-use futures_util::{ task::AtomicWaker, Stream, StreamExt };
-use ps2_mouse::{ Mouse, MouseState };
+use futures_util::{task::AtomicWaker, Stream, StreamExt};
+use ps2_mouse::{Mouse, MouseState};
 
 static MOUSE_QUEUE: OnceCell<ArrayQueue<u8>> = OnceCell::uninit();
 static WAKER: AtomicWaker = AtomicWaker::new();
@@ -27,7 +30,9 @@ pub struct PacketStream {
 
 impl PacketStream {
     pub fn new() -> Self {
-        MOUSE_QUEUE.try_init_once(|| ArrayQueue::new(MOUSE_QUEUE_SIZE)).expect("Mouse queue already initialized.");
+        MOUSE_QUEUE
+            .try_init_once(|| ArrayQueue::new(MOUSE_QUEUE_SIZE))
+            .expect("Mouse queue already initialized.");
         PacketStream { _private: () }
     }
 }
@@ -35,7 +40,9 @@ impl Stream for PacketStream {
     type Item = u8;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<u8>> {
-        let queue = MOUSE_QUEUE.try_get().expect("Mouse queue is not initialized");
+        let queue = MOUSE_QUEUE
+            .try_get()
+            .expect("Mouse queue is not initialized");
         if let Some(packet) = queue.pop() {
             return Poll::Ready(Some(packet));
         }
@@ -45,7 +52,7 @@ impl Stream for PacketStream {
                 WAKER.take();
                 Poll::Ready(Some(packet))
             }
-            None => { Poll::Pending }
+            None => Poll::Pending,
         }
     }
 }

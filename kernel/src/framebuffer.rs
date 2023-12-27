@@ -12,10 +12,8 @@ const LETTER_SPACING: usize = 0;
 /// Padding from the border. Prevent that font is too close to border.
 const BORDER_PADDING: usize = 1;
 
-
 mod font_constants {
     use super::*;
-
 
     pub const CHAR_RASTER_HEIGHT: RasterHeight = RasterHeight::Size16;
     pub const CHAR_RASTER_WIDTH: usize = get_raster_width(FontWeight::Regular, CHAR_RASTER_HEIGHT);

@@ -1,21 +1,21 @@
 use conquer_once::spin::OnceCell;
-use spinning_top::Spinlock;
 use lazy_static::lazy_static;
+use spinning_top::Spinlock;
 
-use x86_64::structures::idt::InterruptDescriptorTable;
 use x86_64::instructions::port::Port;
+use x86_64::structures::idt::InterruptDescriptorTable;
 
 use acpi::platform::interrupt::Apic;
 
 use x2apic::lapic::LocalApic;
 
-use pic8259::ChainedPics;
 use crate::gdt;
+use pic8259::ChainedPics;
 
-mod local_apic;
-mod io_apic;
 mod exception_handlers;
 mod interrupt_handlers;
+mod io_apic;
+mod local_apic;
 
 const IRQ_INDEX: u8 = 0x20;
 
@@ -65,7 +65,11 @@ pub fn init_apic(apic_info: Apic) {
     unsafe {
         let local_apic = local_apic::init_local_apic(apic_info.local_apic_address);
         let local_apic_id = local_apic.id();
-        log::info!("Initialized Local APIC: ID: {}, Version: {}", local_apic.id(), local_apic.version());
+        log::info!(
+            "Initialized Local APIC: ID: {}, Version: {}",
+            local_apic.id(),
+            local_apic.version()
+        );
         LOCAL_APIC.init_once(move || Spinlock::new(local_apic));
 
         for io_apic in apic_info.io_apics {
@@ -78,7 +82,13 @@ pub fn init_apic(apic_info: Apic) {
 }
 
 pub fn end_of_interrupt() {
-    unsafe { LOCAL_APIC.get().expect("Cannot get Local APIC").lock().end_of_interrupt() }
+    unsafe {
+        LOCAL_APIC
+            .get()
+            .expect("Cannot get Local APIC")
+            .lock()
+            .end_of_interrupt()
+    }
 }
 
 fn disable_legacy_pic() {

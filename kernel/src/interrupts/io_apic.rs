@@ -1,6 +1,6 @@
-use x2apic::ioapic::{ IoApic, RedirectionTableEntry, IrqFlags };
-use crate::memory;
 use super::InterruptIndex;
+use crate::memory;
+use x2apic::ioapic::{IoApic, IrqFlags, RedirectionTableEntry};
 
 pub const IO_APIC_OFFSET: u8 = 100;
 
@@ -16,8 +16,18 @@ pub unsafe fn init_io_apic(io_apic_address: u64, local_apic_id: u8) {
     let mut io_apic = IoApic::new(io_apic_address);
     io_apic.init(IO_APIC_OFFSET);
 
-    register_io_apic_entry(&mut io_apic, local_apic_id, InterruptIndex::Keyboard as u8, IoApicTableIndex::Keyboard as u8);
-    register_io_apic_entry(&mut io_apic, local_apic_id, InterruptIndex::Mouse as u8, IoApicTableIndex::Mouse as u8);
+    register_io_apic_entry(
+        &mut io_apic,
+        local_apic_id,
+        InterruptIndex::Keyboard as u8,
+        IoApicTableIndex::Keyboard as u8,
+    );
+    register_io_apic_entry(
+        &mut io_apic,
+        local_apic_id,
+        InterruptIndex::Mouse as u8,
+        IoApicTableIndex::Mouse as u8,
+    );
 }
 
 unsafe fn register_io_apic_entry(io_apic: &mut IoApic, lapic_id: u8, int_index: u8, irq_index: u8) {
