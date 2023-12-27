@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url      = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -27,7 +28,7 @@
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
             (pkgs.rust-bin.nightly.latest.default.override {
-                  extensions = [ "rust-src" "cargo" "rustc" "llvm-tools-preview" "rust-std" ];
+                  extensions = [ "rust-src" "cargo" "rustc" "llvm-tools-preview" "rust-std" "rust-analyzer" ];
                   targets = ["x86_64-unknown-linux-gnu" "x86_64-unknown-none"];
             })
           ];
@@ -39,7 +40,6 @@
 
             pkg-config
             clippy
-            rust-analyzer
           ];
 
           RUST_SRC_PATH = "${pkgs.rust-bin.nightly.latest.default.override {
