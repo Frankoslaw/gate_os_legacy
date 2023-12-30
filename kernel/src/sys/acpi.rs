@@ -1,4 +1,4 @@
-use crate::memory;
+use crate::sys::memory;
 use acpi::{platform::interrupt::Apic, AcpiHandler, AcpiTables, PhysicalMapping};
 use core::ptr::NonNull;
 use x86_64::{structures::paging::Page, VirtAddr};

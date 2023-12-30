@@ -1,5 +1,5 @@
 use super::InterruptIndex;
-use crate::memory;
+use crate::sys::memory;
 use x2apic::ioapic::{IoApic, IrqFlags, RedirectionTableEntry};
 
 pub const IO_APIC_OFFSET: u8 = 100;

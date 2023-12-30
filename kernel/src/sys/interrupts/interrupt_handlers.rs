@@ -1,4 +1,4 @@
-use crate::task::{keyboard, mouse};
+use crate::sys::task::{keyboard, mouse};
 use x86_64::{instructions::port::Port, structures::idt::InterruptStackFrame};
 
 use super::end_of_interrupt;

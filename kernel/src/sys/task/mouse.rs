@@ -15,7 +15,7 @@ static MOUSE_QUEUE_SIZE: usize = 200;
 pub fn add_packet(packet: u8) {
     if let Ok(queue) = MOUSE_QUEUE.try_get() {
         if let Err(_) = queue.push(packet) {
-            log::warn!("WARNING: mouse queue full; dropping mouse input");
+            // log::warn!("WARNING: mouse queue full; dropping mouse input");
         } else {
             WAKER.wake();
         }

@@ -1,4 +1,4 @@
-use crate::allocator::{align_up, Locked};
+use crate::sys::allocator::{align_up, Locked};
 use core::alloc::{GlobalAlloc, Layout};
 use core::{mem, ptr};
 

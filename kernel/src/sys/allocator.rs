@@ -1,11 +1,11 @@
-use crate::memory;
+use crate::sys::memory;
 use spinning_top::{guard::SpinlockGuard, Spinlock};
 use x86_64::{
     structures::paging::{mapper::MapToError, PageTableFlags, Size4KiB},
     VirtAddr,
 };
 
-use crate::allocator::fixed_size_block::FixedSizeBlockAllocator;
+use crate::sys::allocator::fixed_size_block::FixedSizeBlockAllocator;
 
 pub mod bump;
 pub mod fixed_size_block;

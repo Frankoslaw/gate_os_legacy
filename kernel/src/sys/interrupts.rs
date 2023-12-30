@@ -9,7 +9,7 @@ use acpi::platform::interrupt::Apic;
 
 use x2apic::lapic::LocalApic;
 
-use crate::gdt;
+use crate::sys::gdt;
 use pic8259::ChainedPics;
 
 mod exception_handlers;

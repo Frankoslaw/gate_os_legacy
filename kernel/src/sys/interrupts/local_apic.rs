@@ -1,7 +1,7 @@
 use x2apic::lapic::{LocalApic, LocalApicBuilder, TimerDivide, TimerMode};
 
 use super::InterruptIndex;
-use crate::memory;
+use crate::sys::memory;
 
 pub fn init_local_apic(local_apic_address: u64) -> LocalApic {
     memory::identity_map(local_apic_address, None);

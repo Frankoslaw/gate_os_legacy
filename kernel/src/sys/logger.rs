@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::{framebuffer::FrameBufferWriter, serial::SerialPort};
+use crate::sys::{framebuffer::FrameBufferWriter, serial::SerialPort};
 use bootloader_api::info::FrameBufferInfo;
 use conquer_once::spin::OnceCell;
 use core::fmt::Write;
@@ -85,7 +85,7 @@ impl LockedLogger {
 
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::logger::LOGGER.get().unwrap()._print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::sys::logger::LOGGER.get().unwrap()._print(format_args!($($arg)*)));
 }
 
 #[macro_export]

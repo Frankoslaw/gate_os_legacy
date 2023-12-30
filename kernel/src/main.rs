@@ -10,7 +10,7 @@ use x86_64::VirtAddr;
 
 use bootloader_api::config::{BootloaderConfig, Mapping};
 use bootloader_api::{entry_point, info::FrameBufferInfo, BootInfo};
-use kernel::logger;
+use kernel::sys::logger;
 use log::LevelFilter;
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
@@ -42,15 +42,18 @@ pub fn init_logger(
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
+    // kernel::init(boot_info);
+
+    //loop {}
     if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
         let fb_info = framebuffer.info().clone();
         let fb_buffer = framebuffer.buffer_mut();
 
-        init_logger(fb_buffer, fb_info, LevelFilter::Error, true, true);
+        init_logger(fb_buffer, fb_info, LevelFilter::Info, true, true);
     }
     kernel::println!();
     // MEMORY
-    use kernel::memory;
+    use kernel::sys::memory;
 
     let phys_mem_offset = VirtAddr::new(
         boot_info
@@ -63,11 +66,11 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     memory::init(phys_mem_offset.as_u64(), &boot_info.memory_regions);
 
     // ALLOCATOR
-    use kernel::allocator;
+    use kernel::sys::allocator;
     allocator::init_heap().expect("heap initialization failed");
 
     // ACPI
-    use kernel::acpi;
+    use kernel::sys::acpi;
     let rsdp_addr = boot_info
         .rsdp_addr
         .into_option()
@@ -75,15 +78,15 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     let apic_info = acpi::init(rsdp_addr);
 
     // GDT
-    use kernel::gdt;
+    use kernel::sys::gdt;
     gdt::init();
 
     // INTERRUPTS
-    use kernel::interrupts;
+    use kernel::sys::interrupts;
     interrupts::init_apic(apic_info);
 
     // TASK
-    use kernel::task::{self, executor::Executor, keyboard, mouse, Task};
+    use kernel::sys::task::{self, executor::Executor, keyboard, mouse, Task};
     let mut executor = Executor::new();
 
     log::info!("Task Executor initialized");

@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 
+#[allow(dead_code)]
 pub struct PCIDevice {
     bus: u8,
     slot: u8,

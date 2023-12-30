@@ -72,7 +72,7 @@ fn run(line: &str) {
             cpuid.get_processor_brand_string().unwrap().as_str()
         );
     } else if line == "pci" {
-        let pci_devices = unsafe { crate::pci::pcie_list_device() };
+        let pci_devices = unsafe { crate::sys::pci::pcie_list_device() };
         pci_devices.iter().for_each(|device| {
             crate::println!("pci device: vendor id: {:#x}, device id: {:#x}", device.vendor, device.device);
         });
