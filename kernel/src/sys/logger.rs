@@ -1,50 +1,25 @@
 #![allow(dead_code)]
-use crate::sys::{framebuffer::FrameBufferWriter, serial::SerialPort};
-use bootloader_api::info::FrameBufferInfo;
+use crate::api::vga::Color;
+use crate::sys::framebuffer::{WRITER, set_color, FG, BG};
 use conquer_once::spin::OnceCell;
+use log::{LevelFilter, Level};
 use core::fmt::Write;
-use spinning_top::Spinlock;
 
 pub static LOGGER: OnceCell<LockedLogger> = OnceCell::uninit();
 
 pub struct LockedLogger {
-    framebuffer: Option<Spinlock<FrameBufferWriter>>,
-    serial: Option<Spinlock<SerialPort>>,
+    fb_enable: bool,
+    serial_enable: bool,
 }
 
 impl LockedLogger {
     pub fn new(
-        framebuffer: &'static mut [u8],
-        info: FrameBufferInfo,
         frame_buffer_logger_status: bool,
         serial_logger_status: bool,
     ) -> Self {
-        let framebuffer = match frame_buffer_logger_status {
-            true => Some(Spinlock::new(FrameBufferWriter::new(framebuffer, info))),
-            false => None,
-        };
-
-        let serial = match serial_logger_status {
-            true => Some(Spinlock::new(unsafe { SerialPort::init() })),
-            false => None,
-        };
-
         LockedLogger {
-            framebuffer,
-            serial,
-        }
-    }
-
-    /// Force-unlocks the logger to prevent a deadlock.
-    ///
-    /// ## Safety
-    /// This method is not memory safe and should be only used when absolutely necessary.
-    pub unsafe fn force_unlock(&self) {
-        if let Some(framebuffer) = &self.framebuffer {
-            unsafe { framebuffer.force_unlock() };
-        }
-        if let Some(serial) = &self.serial {
-            unsafe { serial.force_unlock() };
+            fb_enable: frame_buffer_logger_status,
+            serial_enable: serial_logger_status,
         }
     }
 }
@@ -55,14 +30,29 @@ impl log::Log for LockedLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        if let Some(framebuffer) = &self.framebuffer {
-            let mut framebuffer = framebuffer.lock();
-            writeln!(framebuffer, "{:5}: {}\r", record.level(), record.args()).unwrap();
+        if let Some(framebuffer) = WRITER.get() {
+            match record.level() {
+                Level::Trace => set_color(Color::Pink, BG),
+                Level::Debug => set_color(Color::LightCyan, BG),
+                Level::Info => set_color(Color::LightGreen, BG),
+                Level::Warn => set_color(Color::Yellow, BG),
+                Level::Error => set_color(Color::LightRed, BG),
+            }
+
+            let mut fb = framebuffer.lock();
+            write!(fb, "[{:5}]: ", record.level()).unwrap();
+
+            unsafe{ framebuffer.force_unlock() };
+            set_color(FG, BG);
+
+            let mut fb = framebuffer.lock();
+            writeln!(fb, "{}\r", record.args()).unwrap();
+
         }
-        if let Some(serial) = &self.serial {
-            let mut serial = serial.lock();
-            writeln!(serial, "{:5}: {}\r", record.level(), record.args()).unwrap();
-        }
+        // if let Some(serial) = &self.serial {
+        //     let mut serial = serial.lock();
+        //     writeln!(serial, "{:5}: {}\r", record.level(), record.args()).unwrap();
+        // }
     }
 
     fn flush(&self) {}
@@ -72,14 +62,14 @@ use core::fmt;
 
 impl LockedLogger {
     pub fn _print(&self, args: fmt::Arguments) {
-        if let Some(framebuffer) = &self.framebuffer {
+        if let Some(framebuffer) = WRITER.get() {
             let mut framebuffer = framebuffer.lock();
             framebuffer.write_fmt(args).unwrap();
         }
-        if let Some(serial) = &self.serial {
-            let mut serial = serial.lock();
-            serial.write_fmt(args).unwrap();
-        }
+        // if let Some(serial) = &self.serial {
+        //     let mut serial = serial.lock();
+        //     serial.write_fmt(args).unwrap();
+        // }
     }
 }
 
@@ -90,6 +80,23 @@ macro_rules! print {
 
 #[macro_export]
 macro_rules! println {
-    () => ($crate::print!("\n\r"));
-    ($($arg:tt)*) => ($crate::print!("{}\n\r", format_args!($($arg)*)));
+    () => ($crate::print!("\r\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\r\n", format_args!($($arg)*)));
+}
+
+const FRAME_BUFFER_LOGGER_STATUS: bool = true;
+const SERIAL_LOGGER_STATUS: bool = true;
+// TODO: read from bootloader init
+const LOG_LEVEL: LevelFilter = LevelFilter::Trace;
+
+
+pub fn init() {
+    let logger = LOGGER.get_or_init(move || {
+        LockedLogger::new(
+            FRAME_BUFFER_LOGGER_STATUS,
+            SERIAL_LOGGER_STATUS,
+        )
+    });
+    log::set_logger(logger).expect("logger already set");
+    log::set_max_level(LOG_LEVEL);
 }

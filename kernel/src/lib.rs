@@ -16,8 +16,13 @@ pub mod sys;
 
 use bootloader_api::BootInfo;
 
-pub fn init(boot_info: &'static BootInfo) {
-    // sys::vga::init();
+pub fn init(boot_info: &'static mut BootInfo) {
+    let framebuffer = boot_info.framebuffer.as_mut().unwrap();
+    let fb_info = framebuffer.info().clone();
+    let fb_buffer = framebuffer.buffer_mut();
+
+    sys::framebuffer::init(fb_buffer, fb_info);
+    sys::logger::init();
     // sys::gdt::init();
     // sys::idt::init();
     // sys::pic::init(); // Enable interrupts
@@ -25,7 +30,7 @@ pub fn init(boot_info: &'static BootInfo) {
     // sys::keyboard::init();
     // sys::time::init();
 
-    log::info!("MOROS v{}\n", option_env!("GATE_OS_VERSION").unwrap_or(env!("CARGO_PKG_VERSION")));
+    log::info!("GATE OS v{}\n", option_env!("GATE_OS_VERSION").unwrap_or(env!("CARGO_PKG_VERSION")));
     // sys::mem::init(boot_info);
     // sys::cpu::init();
     // sys::pci::init(); // Require MEM
