@@ -3,10 +3,10 @@ use crate::sys;
 
 use core::sync::atomic::{AtomicBool, Ordering};
 use pc_keyboard::{layouts, DecodedKey, Error, HandleControl, KeyState, KeyCode, KeyEvent, Keyboard, ScancodeSet1};
-use spin::Mutex;
+use spinning_top::Spinlock;
 use x86_64::instructions::port::Port;
 
-pub static KEYBOARD: Mutex<Option<KeyboardLayout>> = Mutex::new(None);
+pub static KEYBOARD: Spinlock<Option<KeyboardLayout>> = Spinlock::new(None);
 
 pub static ALT: AtomicBool = AtomicBool::new(false);
 pub static CTRL: AtomicBool = AtomicBool::new(false);
@@ -37,9 +37,9 @@ impl KeyboardLayout {
 
     fn from(name: &str) -> Option<Self> {
         match name {
-            "azerty" => Some(KeyboardLayout::Azerty(Keyboard::new(HandleControl::MapLettersToUnicode))),
-            "dvorak" => Some(KeyboardLayout::Dvorak(Keyboard::new(HandleControl::MapLettersToUnicode))),
-            "qwerty" => Some(KeyboardLayout::Qwerty(Keyboard::new(HandleControl::MapLettersToUnicode))),
+            "azerty" => Some(KeyboardLayout::Azerty(Keyboard::new(ScancodeSet1::new(),layouts::Azerty, HandleControl::MapLettersToUnicode))),
+            "dvorak" => Some(KeyboardLayout::Dvorak(Keyboard::new(ScancodeSet1::new(),layouts::Dvorak104Key, HandleControl::MapLettersToUnicode))),
+            "qwerty" => Some(KeyboardLayout::Qwerty(Keyboard::new(ScancodeSet1::new(),layouts::Us104Key, HandleControl::MapLettersToUnicode))),
             _ => None,
         }
     }
@@ -56,7 +56,7 @@ pub fn set_keyboard(layout: &str) -> bool {
 
 pub fn init() {
     set_keyboard(option_env!("MOROS_KEYBOARD").unwrap_or("qwerty"));
-    sys::idt::set_irq_handler(1, interrupt_handler);
+    sys::idt::set_irq_handler(2, interrupt_handler);
 }
 
 fn read_scancode() -> u8 {
@@ -82,9 +82,9 @@ fn interrupt_handler() {
         if let Ok(Some(event)) = keyboard.add_byte(scancode) {
             let ord = Ordering::Relaxed;
             match event.code {
-                KeyCode::AltLeft | KeyCode::AltRight => ALT.store(event.state == KeyState::Down, ord),
-                KeyCode::ShiftLeft | KeyCode::ShiftRight => SHIFT.store(event.state == KeyState::Down, ord),
-                KeyCode::ControlLeft | KeyCode::ControlRight => CTRL.store(event.state == KeyState::Down, ord),
+                KeyCode::LAlt | KeyCode::RAltGr | KeyCode::RAlt2 => ALT.store(event.state == KeyState::Down, ord),
+                KeyCode::LShift | KeyCode::RShift => SHIFT.store(event.state == KeyState::Down, ord),
+                KeyCode::LControl | KeyCode::RControl | KeyCode::RControl2 => CTRL.store(event.state == KeyState::Down, ord),
                 _ => {}
             }
             let is_alt = ALT.load(ord);

@@ -36,13 +36,12 @@ pub fn init(boot_info: &'static mut BootInfo) {
         .expect("Failed to get RSDP address");
 
     sys::mem::init(physical_memory_offset, &boot_info.memory_regions);
-    sys::allocator::init_heap().unwrap();
     let apic_info = sys::acpi::init(rsdp_addr);
     
     sys::idt::init();
     sys::apic::init(apic_info); // Enable interrupts
-    // sys::keyboard::init();
-    // sys::time::init();
+    sys::keyboard::init();
+    sys::time::init();
 
     log::info!("GATE OS v{} \r\n", option_env!("GATE_OS_VERSION").unwrap_or(env!("CARGO_PKG_VERSION")));
     sys::cpu::init();
@@ -50,5 +49,5 @@ pub fn init(boot_info: &'static mut BootInfo) {
     // sys::net::init(); // Require PCI
     // sys::ata::init();
     // sys::fs::init(); // Require ATA
-    // sys::clock::init(); // Require MEM
+    sys::clock::init(); // Require MEM
 }

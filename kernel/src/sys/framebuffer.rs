@@ -137,7 +137,8 @@ impl FrameBufferWriter {
                 self.write_char(' ');
             },
             byte => {
-                self.write_char(byte as char);
+                let ascii_code = if is_printable(byte) { byte } else { BACKUP_CHAR as u8 };
+                self.write_char(ascii_code as char);
             }
         }
     }
@@ -413,6 +414,15 @@ pub fn set_color(foreground: Color, background: Color) {
     interrupts::without_interrupts(|| {
         FB_WRITER.get().unwrap().lock().set_color(foreground, background)
     })
+}
+
+// ASCII Printable
+// Backspace
+// New Line
+// Carriage Return
+// Extended ASCII Printable
+pub fn is_printable(c: u8) -> bool {
+    matches!(c, 0x20..=0x7E | 0x08 | 0x0A | 0x0D | 0x7F..=0xFF)
 }
 
 pub fn set_palette(palette: Palette) {

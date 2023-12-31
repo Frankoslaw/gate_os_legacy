@@ -1,3 +1,4 @@
+use crate::sys::idt;
 use acpi::platform::interrupt::Apic;
 use x2apic::lapic::LocalApic;
 
@@ -7,11 +8,15 @@ use spinning_top::Spinlock;
 
 mod io_apic;
 mod local_apic;
+mod interrupt_handlers;
 
 pub static LOCAL_APIC: OnceCell<Spinlock<LocalApic>> = OnceCell::uninit();
 
 
 pub fn init(apic_info: Apic) {
+    idt::set_irq_handler(0, interrupt_handlers::timer_interrupt_handler);
+    idt::set_irq_handler(1, interrupt_handlers::apic_error_handler);
+
     unsafe {
         let local_apic = local_apic::init_local_apic(apic_info.local_apic_address);
         let local_apic_id = local_apic.id();

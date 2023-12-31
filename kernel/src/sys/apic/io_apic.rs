@@ -6,7 +6,6 @@ pub const IO_APIC_OFFSET: u8 = 100;
 #[repr(u8)]
 pub enum IoApicTableIndex {
     Keyboard = 2,
-    Mouse = 3,
 }
 
 pub unsafe fn init_io_apic(io_apic_address: u64, local_apic_id: u8) {
@@ -21,12 +20,12 @@ pub unsafe fn init_io_apic(io_apic_address: u64, local_apic_id: u8) {
         idt::interrupt_index(IoApicTableIndex::Keyboard as u8) as u8,
         IoApicTableIndex::Keyboard as u8,
     );
-    register_io_apic_entry(
-        &mut io_apic,
-        local_apic_id,
-        idt::interrupt_index(IoApicTableIndex::Mouse as u8) as u8,
-        IoApicTableIndex::Mouse as u8,
-    );
+    // register_io_apic_entry(
+    //     &mut io_apic,
+    //     local_apic_id,
+    //     idt::interrupt_index(IoApicTableIndex::Mouse as u8) as u8,
+    //     IoApicTableIndex::Mouse as u8,
+    // );
 }
 
 pub unsafe fn register_io_apic_entry(io_apic: &mut IoApic, lapic_id: u8, int_index: u8, irq_index: u8) {

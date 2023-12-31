@@ -1,8 +1,8 @@
-use x86_64::{instructions::port::Port, structures::idt::InterruptStackFrame};
+use crate::sys::idt;
+use x86_64::{structures::idt::InterruptStackFrame};
 
-use super::end_of_interrupt;
 
-pub extern "x86-interrupt" fn apic_error_handler(_stack_frame: InterruptStackFrame) {
+pub fn apic_error_handler() {
     unsafe {
         let lapic = super::LOCAL_APIC
             .get()
@@ -13,7 +13,6 @@ pub extern "x86-interrupt" fn apic_error_handler(_stack_frame: InterruptStackFra
     }
 }
 
-pub extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
+pub fn timer_interrupt_handler() {
     // TODO handle the timer interrupt
-    end_of_interrupt();
 }
