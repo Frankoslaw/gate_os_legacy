@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use crate::api::vga::Color;
-use crate::sys::framebuffer::{WRITER, set_color, FG, BG};
+use crate::sys::framebuffer::{FB_WRITER, set_color, FG, BG};
+// use crate::sys::serial::SERIAL_WRITER;
 use conquer_once::spin::OnceCell;
 use log::{LevelFilter, Level};
 use core::fmt::Write;
@@ -30,7 +31,7 @@ impl log::Log for LockedLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        if let Some(framebuffer) = WRITER.get() {
+        if let Some(framebuffer) = FB_WRITER.get() {
             match record.level() {
                 Level::Trace => set_color(Color::Pink, BG),
                 Level::Debug => set_color(Color::LightCyan, BG),
@@ -46,12 +47,13 @@ impl log::Log for LockedLogger {
             set_color(FG, BG);
 
             let mut fb = framebuffer.lock();
-            writeln!(fb, "{}\r", record.args()).unwrap();
+            write!(fb, "{}\r\n", record.args()).unwrap();
 
         }
-        // if let Some(serial) = &self.serial {
+
+        // if let Some(serial) = SERIAL_WRITER.get() {
         //     let mut serial = serial.lock();
-        //     writeln!(serial, "{:5}: {}\r", record.level(), record.args()).unwrap();
+        //     writeln!(serial, "{:5}: {}\r\n", record.level(), record.args()).unwrap();
         // }
     }
 
@@ -62,11 +64,12 @@ use core::fmt;
 
 impl LockedLogger {
     pub fn _print(&self, args: fmt::Arguments) {
-        if let Some(framebuffer) = WRITER.get() {
+        if let Some(framebuffer) = FB_WRITER.get() {
             let mut framebuffer = framebuffer.lock();
             framebuffer.write_fmt(args).unwrap();
         }
-        // if let Some(serial) = &self.serial {
+
+        // if let Some(serial) = SERIAL_WRITER.get() {
         //     let mut serial = serial.lock();
         //     serial.write_fmt(args).unwrap();
         // }

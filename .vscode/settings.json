@@ -1,4 +1,5 @@
 {
     "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
-    "rust-analyzer.showUnlinkedFileNotification": false
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    "discord.enabled": false
 }

@@ -1,4 +1,4 @@
-use crate::sys::memory;
+use crate::sys::mem;
 use spinning_top::{guard::SpinlockGuard, Spinlock};
 use x86_64::{
     structures::paging::{mapper::MapToError, PageTableFlags, Size4KiB},
@@ -41,7 +41,7 @@ pub fn init_heap() -> Result<(), MapToError<Size4KiB>> {
     let heap_start = VirtAddr::new(HEAP_START as u64);
     let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
 
-    memory::range_map(heap_start, HEAP_SIZE as u64, Some(flags));
+    mem::range_map(heap_start, HEAP_SIZE as u64, Some(flags));
 
     unsafe {
         ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE);

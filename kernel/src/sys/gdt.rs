@@ -7,12 +7,19 @@ use x86_64::structures::tss::TaskStateSegment;
 use x86_64::VirtAddr;
 
 /// Double fault interrupt stack table index
-pub const DOUBLE_FAULT_IST_INDEX: usize = 0;
+const STACK_SIZE: usize = 1024 * 8;
+pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
+pub const PAGE_FAULT_IST_INDEX: u16 = 1;
+pub const GENERAL_PROTECTION_FAULT_IST_INDEX: u16 = 2;
 
+
+#[allow(dead_code)]
 struct Selectors {
     code_selector: SegmentSelector,
     data_selector: SegmentSelector,
     tss_selector: SegmentSelector,
+    pub user_code: SegmentSelector,
+    pub user_data: SegmentSelector,
 }
 struct Gdt {
     gdt: GlobalDescriptorTable,
@@ -22,13 +29,25 @@ struct Gdt {
 lazy_static! {
     static ref TSS: TaskStateSegment = {
         let mut tss = TaskStateSegment::new();
-        tss.interrupt_stack_table[DOUBLE_FAULT_IST_INDEX] = {
-            const STACK_SIZE: usize = 4096 * 5;
+
+
+        tss.privilege_stack_table[0] = {
             static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
-            let stack_start = VirtAddr::from_ptr(unsafe { &STACK });
-            let stack_end = stack_start + STACK_SIZE;
-            stack_end
+            VirtAddr::from_ptr(unsafe { &STACK }) + STACK_SIZE
         };
+        tss.interrupt_stack_table[DOUBLE_FAULT_IST_INDEX as usize] = {
+            static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
+            VirtAddr::from_ptr(unsafe { &STACK }) + STACK_SIZE
+        };
+        tss.interrupt_stack_table[PAGE_FAULT_IST_INDEX as usize] = {
+            static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
+            VirtAddr::from_ptr(unsafe { &STACK }) + STACK_SIZE
+        };
+        tss.interrupt_stack_table[GENERAL_PROTECTION_FAULT_IST_INDEX as usize] = {
+            static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
+            VirtAddr::from_ptr(unsafe { &STACK }) + STACK_SIZE
+        };
+
         tss
     };
 }
@@ -39,12 +58,17 @@ lazy_static! {
         let code_selector = gdt.add_entry(Descriptor::kernel_code_segment());
         let data_selector = gdt.add_entry(Descriptor::kernel_data_segment());
         let tss_selector = gdt.add_entry(Descriptor::tss_segment(&TSS));
+        let user_code = gdt.add_entry(Descriptor::user_code_segment());
+        let user_data = gdt.add_entry(Descriptor::user_data_segment());
+
         Gdt {
             gdt,
             selector: Selectors {
                 code_selector,
                 data_selector,
                 tss_selector,
+                user_code,
+                user_data
             },
         }
     };

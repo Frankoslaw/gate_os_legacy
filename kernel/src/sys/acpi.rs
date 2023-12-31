@@ -1,4 +1,4 @@
-use crate::sys::memory;
+use crate::sys::mem;
 use acpi::{platform::interrupt::Apic, AcpiHandler, AcpiTables, PhysicalMapping};
 use core::ptr::NonNull;
 use x86_64::{structures::paging::Page, VirtAddr};
@@ -13,7 +13,7 @@ impl AcpiHandler for ACPIHandler {
         size: usize,
     ) -> PhysicalMapping<Self, T> {
         let virtual_address = VirtAddr::new(physical_address as u64);
-        memory::identity_map(physical_address as u64, None);
+        mem::identity_map(physical_address as u64, None);
         PhysicalMapping::new(
             physical_address,
             NonNull::new(virtual_address.as_mut_ptr()).unwrap(),
@@ -26,7 +26,7 @@ impl AcpiHandler for ACPIHandler {
     fn unmap_physical_region<T>(region: &PhysicalMapping<Self, T>) {
         let virtual_address = VirtAddr::new(region.virtual_start().as_ptr() as u64);
         let page: Page = Page::containing_address(virtual_address);
-        memory::unmap(page);
+        mem::unmap(page);
     }
 }
 

@@ -1,9 +1,11 @@
 use crate::api::vga::{Color, Palette};
 use crate::api::vga::color;
+use crate::sys;
 
 use bit_field::BitField;
-use bootloader_api::info::{FrameBufferInfo, PixelFormat};
 use core::{fmt, ptr};
+use core::fmt::Write;
+use bootloader_api::info::{FrameBufferInfo, PixelFormat};
 use font_constants::BACKUP_CHAR;
 use noto_sans_mono_bitmap::{
     get_raster, get_raster_width, FontWeight, RasterHeight, RasterizedChar,
@@ -14,6 +16,7 @@ use conquer_once::spin::OnceCell;
 use lazy_static::lazy_static;
 
 use vte::{Params, Parser, Perform};
+use x86_64::instructions::interrupts;
 
 
 const LINE_SPACING: usize = 2;
@@ -34,7 +37,7 @@ mod font_constants {
 lazy_static! {
     pub static ref PARSER: Spinlock<Parser> = Spinlock::new(Parser::new());
 }
-pub static WRITER: OnceCell<Spinlock<FrameBufferWriter>> = OnceCell::uninit();
+pub static FB_WRITER: OnceCell<Spinlock<FrameBufferWriter>> = OnceCell::uninit();
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,6 +84,15 @@ impl FrameBufferWriter {
         logger
     }
 
+    fn position(&self) -> (usize, usize) {
+        (self.x_pos, self.y_pos)
+    }
+
+    fn set_position(&mut self, x: usize, y: usize){
+        self.x_pos = x;
+        self.y_pos = y;
+    }
+
     fn newline(&mut self) {
         self.y_pos += font_constants::CHAR_RASTER_HEIGHT.val() + LINE_SPACING;
         self.carriage_return()
@@ -102,6 +114,14 @@ impl FrameBufferWriter {
 
     fn height(&self) -> usize {
         self.info.height
+    }
+
+    fn disable_echo(&self) {
+        sys::console::disable_echo();
+    }
+
+    fn enable_echo(&self) {
+        sys::console::enable_echo();
     }
 
     fn write_byte(&mut self, byte: u8) {
@@ -327,11 +347,21 @@ impl Perform for FrameBufferWriter {
                 // self.set_writer_position(x, y);
                 // self.set_cursor_position(x, y);
             },
-            'h' => { // Enable echo + cursor
-                todo!();
+            'h' => { // Enable
+                for param in params.iter() {
+                    match param[0] {
+                        12 => self.enable_echo(),
+                        _ => return,
+                    }
+                }
             },
-            'l' => { // Disable echo + cursor
-                todo!();
+            'l' => { // Disable
+                for param in params.iter() {
+                    match param[0] {
+                        12 => self.disable_echo(),
+                        _ => return,
+                    }
+                }
             },
             _ => {},
         }
@@ -343,19 +373,56 @@ unsafe impl Sync for FrameBufferWriter {}
 
 impl fmt::Write for FrameBufferWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        for c in s.chars() {
-            self.write_char(c);
+        let mut parser = PARSER.lock();
+        for byte in s.bytes() {
+            parser.advance(self, byte);
         }
+        let (x, y) = self.position();
+        self.set_position(x, y);
+
         Ok(())
     }
 }
 
-pub fn init(framebuffer: &'static mut [u8], info: FrameBufferInfo) {
-    WRITER.get_or_init(|| {
-        Spinlock::new(FrameBufferWriter::new(framebuffer, info))
+#[doc(hidden)]
+pub fn print_fmt(args: fmt::Arguments) {
+    interrupts::without_interrupts(|| {
+        FB_WRITER.get().unwrap().lock().write_fmt(args).expect("Could not print to VGA");
     });
 }
 
+pub fn cols() -> usize {
+    interrupts::without_interrupts(|| {
+        FB_WRITER.get().unwrap().lock().width()
+    })
+}
+
+pub fn rows() -> usize {
+    interrupts::without_interrupts(|| {
+        FB_WRITER.get().unwrap().lock().height()
+    })
+}
+
+pub fn color() -> (Color, Color) {
+    interrupts::without_interrupts(|| {
+        FB_WRITER.get().unwrap().lock().color()
+    })
+}
+
 pub fn set_color(foreground: Color, background: Color) {
-    WRITER.get().unwrap().lock().set_color(foreground, background)
+    interrupts::without_interrupts(|| {
+        FB_WRITER.get().unwrap().lock().set_color(foreground, background)
+    })
+}
+
+pub fn set_palette(palette: Palette) {
+    interrupts::without_interrupts(|| {
+        FB_WRITER.get().unwrap().lock().set_palette(palette)
+    })
+}
+
+pub fn init(framebuffer: &'static mut [u8], info: FrameBufferInfo) {
+    FB_WRITER.get_or_init(|| {
+        Spinlock::new(FrameBufferWriter::new(framebuffer, info))
+    });
 }

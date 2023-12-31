@@ -22,26 +22,33 @@ pub fn init(boot_info: &'static mut BootInfo) {
     let fb_buffer = framebuffer.buffer_mut();
 
     sys::framebuffer::init(fb_buffer, fb_info);
+    sys::serial::init();
     sys::logger::init();
-    // sys::gdt::init();
-    // sys::idt::init();
-    // sys::pic::init(); // Enable interrupts
-    // sys::serial::init();
+    sys::gdt::init();
+
+    let physical_memory_offset = boot_info
+        .physical_memory_offset
+        .into_option()
+        .expect("Failed to get Physical memory offset");
+    let rsdp_addr = boot_info
+        .rsdp_addr
+        .into_option()
+        .expect("Failed to get RSDP address");
+
+    sys::mem::init(physical_memory_offset, &boot_info.memory_regions);
+    sys::allocator::init_heap().unwrap();
+    let apic_info = sys::acpi::init(rsdp_addr);
+    
+    sys::idt::init();
+    sys::apic::init(apic_info); // Enable interrupts
     // sys::keyboard::init();
     // sys::time::init();
 
-    log::info!("GATE OS v{}\n", option_env!("GATE_OS_VERSION").unwrap_or(env!("CARGO_PKG_VERSION")));
-    // sys::mem::init(boot_info);
-    // sys::cpu::init();
+    log::info!("GATE OS v{} \r\n", option_env!("GATE_OS_VERSION").unwrap_or(env!("CARGO_PKG_VERSION")));
+    sys::cpu::init();
     // sys::pci::init(); // Require MEM
     // sys::net::init(); // Require PCI
     // sys::ata::init();
     // sys::fs::init(); // Require ATA
     // sys::clock::init(); // Require MEM
-}
-
-pub fn hlt_loop() -> ! {
-    loop {
-        x86_64::instructions::hlt();
-    }
 }
