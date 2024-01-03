@@ -45,13 +45,9 @@ pub fn init(boot_info: &'static mut BootInfo) {
 
     log::info!("GATE OS v{} \r\n", option_env!("GATE_OS_VERSION").unwrap_or(env!("CARGO_PKG_VERSION")));
     sys::cpu::init();
-    // sys::pci::init(); // Require MEM
+    sys::pci::init(); // Require MEM
     // sys::net::init(); // Require PCI
     // sys::ata::init();
     // sys::fs::init(); // Require ATA
     sys::clock::init(); // Require MEM
-
-    log::info!("{:#?}", sys::clock::realtime());
-    sys::time::sleep(10.);
-    log::info!("{:#?}", sys::clock::realtime());
 }

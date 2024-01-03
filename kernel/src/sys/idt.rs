@@ -5,7 +5,6 @@ use pic8259::ChainedPics;
 use spinning_top::Spinlock;
 use lazy_static::lazy_static;
 use x86_64::instructions::interrupts;
-use x86_64::instructions::port::Port;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 
@@ -36,12 +35,6 @@ lazy_static! {
         unsafe {
             idt.double_fault.set_handler_fn(exception_handlers::double_fault_handler).set_stack_index(sys::gdt::DOUBLE_FAULT_IST_INDEX as u16);
         }
-
-        // Interrupts
-        // idt[InterruptIndex::Timer as usize].set_handler_fn(interrupt_handlers::timer_interrupt_handler);
-        // idt[InterruptIndex::Keyboard as usize].set_handler_fn(interrupt_handlers::keyboard_interrupt_handler);
-        // idt[InterruptIndex::Mouse as usize].set_handler_fn(interrupt_handlers::mouse_interrupt_handler);
-        // idt[InterruptIndex::ApicError as usize].set_handler_fn(interrupt_handlers::apic_error_handler);
 
         idt[interrupt_index(0) as usize].set_handler_fn(irq0_handler);
         idt[interrupt_index(1) as usize].set_handler_fn(irq1_handler);
@@ -116,23 +109,5 @@ pub fn set_irq_handler(irq: u8, handler: fn()) {
     interrupts::without_interrupts(|| {
         let mut handlers = IRQ_HANDLERS.lock();
         handlers[irq as usize] = handler;
-
-        // clear_irq_mask(irq);
     });
 }
-
-// pub fn set_irq_mask(irq: u8) {
-//     let mut port: Port<u8> = Port::new(if irq < 8 { PIC1 } else { PIC2 });
-//     unsafe {
-//         let value = port.read() | (1 << (if irq < 8 { irq } else { irq - 8 }));
-//         port.write(value);
-//     }
-// }
-
-// pub fn clear_irq_mask(irq: u8) {
-//     let mut port: Port<u8> = Port::new(if irq < 8 { PIC1 } else { PIC2 });
-//     unsafe {
-//         let value = port.read() & !(1 << if irq < 8 { irq } else { irq - 8 });
-//         port.write(value);
-//     }
-// }

@@ -14,7 +14,6 @@ pub mod logger;
 pub mod mem;
 pub mod pci;
 pub mod serial;
-pub mod task;
 pub mod time;
 
 

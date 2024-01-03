@@ -8,7 +8,7 @@ use core::panic::PanicInfo;
 
 use bootloader_api::config::{BootloaderConfig, Mapping};
 use bootloader_api::{entry_point, BootInfo};
-use kernel::{sys, print, println};
+use kernel::print;
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();

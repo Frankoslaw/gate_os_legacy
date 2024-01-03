@@ -13,7 +13,7 @@ pub static LOCAL_APIC: OnceCell<Spinlock<LocalApic>> = OnceCell::uninit();
 
 
 pub fn init(apic_info: Apic) {
-    idt::set_irq_handler(0, apic_error_handler);
+    idt::set_irq_handler(2, apic_error_handler);
 
     unsafe {
         let local_apic = local_apic::init_local_apic(apic_info.local_apic_address);

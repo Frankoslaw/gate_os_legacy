@@ -9,9 +9,9 @@ use x86_64::instructions::interrupts;
 // which will result in about 54.926 ms between ticks.
 // During init we will change the divider to 1193 to have about 1.000 ms
 // between ticks to improve time measurements accuracy.
-pub const PIT_FREQUENCY: f64 = 3_579_545.0 / 3.0; // 1_193_181.666 Hz.;
+const PIT_FREQUENCY: usize = 1_193_182;
 const PIT_DIVIDER: usize = TimerDivide::Div64 as usize;
-const PIT_INTERVAL: f64 = PIT_FREQUENCY / (PIT_DIVIDER as f64);
+const PIT_INTERVAL: f64 = (PIT_FREQUENCY as f64) / (PIT_DIVIDER as f64);
 
 static PIT_TICKS: AtomicUsize = AtomicUsize::new(0);
 static LAST_RTC_UPDATE: AtomicUsize = AtomicUsize::new(0);
@@ -70,7 +70,7 @@ pub fn rtc_interrupt_handler() {
 
 pub fn init() {
     // PIT timmer
-    sys::idt::set_irq_handler(5, pit_interrupt_handler);
+    sys::idt::set_irq_handler(0, pit_interrupt_handler);
 
     // RTC timmer
     sys::idt::set_irq_handler(8, rtc_interrupt_handler);
