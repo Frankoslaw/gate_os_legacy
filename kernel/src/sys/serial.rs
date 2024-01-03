@@ -95,5 +95,5 @@ fn interrupt_handler() {
         '\x7F' => '\x08', // Delete => Backspace
         c => c,
     };
-    // sys::console::key_handle(c);
+    sys::console::key_handle(c);
 }

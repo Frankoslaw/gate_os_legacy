@@ -6,20 +6,17 @@ use conquer_once::spin::OnceCell;
 use spinning_top::Spinlock;
 
 
-mod io_apic;
-mod local_apic;
-mod interrupt_handlers;
+pub mod io_apic;
+pub mod local_apic;
 
 pub static LOCAL_APIC: OnceCell<Spinlock<LocalApic>> = OnceCell::uninit();
 
 
 pub fn init(apic_info: Apic) {
-    idt::set_irq_handler(0, interrupt_handlers::timer_interrupt_handler);
-    idt::set_irq_handler(1, interrupt_handlers::apic_error_handler);
+    idt::set_irq_handler(0, apic_error_handler);
 
     unsafe {
         let local_apic = local_apic::init_local_apic(apic_info.local_apic_address);
-        let local_apic_id = local_apic.id();
         log::info!(
             "Initialized Local APIC: ID: {}, Version: {}",
             local_apic.id(),
@@ -29,9 +26,20 @@ pub fn init(apic_info: Apic) {
 
         for io_apic in apic_info.io_apics {
             log::info!("Initializing I/O APIC ID: {}", io_apic.id);
-            io_apic::init_io_apic(io_apic.address as u64, local_apic_id as u8);
+            io_apic::init_io_apic(io_apic.address as u64);
         }
     }
 
     x86_64::instructions::interrupts::enable();
+}
+
+pub fn apic_error_handler() {
+    unsafe {
+        let lapic = LOCAL_APIC
+            .get()
+            .expect("Failed to get Local APIC in apic error handler")
+            .lock();
+        let flags = lapic.error_flags();
+        panic!("EXCEPTION: APIC ERROR: {:#?}", flags);
+    }
 }

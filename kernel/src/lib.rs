@@ -50,4 +50,8 @@ pub fn init(boot_info: &'static mut BootInfo) {
     // sys::ata::init();
     // sys::fs::init(); // Require ATA
     sys::clock::init(); // Require MEM
+
+    log::info!("{:#?}", sys::clock::realtime());
+    sys::time::sleep(10.);
+    log::info!("{:#?}", sys::clock::realtime());
 }

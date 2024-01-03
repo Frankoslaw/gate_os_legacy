@@ -56,7 +56,13 @@ pub fn set_keyboard(layout: &str) -> bool {
 
 pub fn init() {
     set_keyboard(option_env!("MOROS_KEYBOARD").unwrap_or("qwerty"));
-    sys::idt::set_irq_handler(2, interrupt_handler);
+    sys::idt::set_irq_handler(1, interrupt_handler);
+    unsafe {
+        sys::apic::io_apic::register_io_apic_entry(
+            sys::idt::interrupt_index(1),
+            1,
+        );
+    }
 }
 
 fn read_scancode() -> u8 {

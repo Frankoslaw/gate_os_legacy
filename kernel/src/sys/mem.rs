@@ -19,7 +19,7 @@ pub fn init(phys_mem_offset: u64, memory_regions: &'static MemoryRegions) {
         let mut memory_size = 0;
         for region in memory_regions.iter() {
             memory_size += region.end - region.start;
-            log::info!("MEM [{:#016X}-{:#016X}] {:?}", region.start, region.end - 1, region.kind);
+            // log::info!("MEM [{:#016X}-{:#016X}] {:?}", region.start, region.end - 1, region.kind);
         }
         log::info!("MEM {} KB", memory_size >> 10);
         MEMORY_SIZE.store(memory_size, Ordering::Relaxed);
