@@ -137,5 +137,5 @@ pub fn init() {
     let ns = Duration::nanoseconds(libm::floor(1e9 * (s - libm::floor(s))) as i64);
     let dt = OffsetDateTime::from_unix_timestamp(s as i64) + ns;
     let rtc = dt.format(DATE_TIME_ZONE);
-    log::info!("RTC {}\n", rtc);
+    log::info!("RTC {}", rtc);
 }

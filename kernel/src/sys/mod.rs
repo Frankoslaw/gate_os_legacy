@@ -1,6 +1,7 @@
 pub mod acpi;
 pub mod allocator;
 pub mod apic;
+pub mod ata;
 pub mod cmos;
 pub mod clock;
 pub mod console;

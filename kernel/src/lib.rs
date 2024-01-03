@@ -47,7 +47,7 @@ pub fn init(boot_info: &'static mut BootInfo) {
     sys::cpu::init();
     sys::pci::init(); // Require MEM
     // sys::net::init(); // Require PCI
-    // sys::ata::init();
+    sys::ata::init();
     // sys::fs::init(); // Require ATA
     sys::clock::init(); // Require MEM
 }

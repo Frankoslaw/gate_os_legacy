@@ -23,7 +23,7 @@ const LINE_SPACING: usize = 2;
 const LETTER_SPACING: usize = 0;
 const BORDER_PADDING: usize = 1;
 
-pub const FG: Color = Color::LightGreen;
+pub const FG: Color = Color::White;
 pub const BG: Color = Color::Black;
 
 mod font_constants {
