@@ -94,7 +94,7 @@ impl Bus {
     }
 
     fn wait(&mut self, ns: u64) {
-        sys::time::nanowait(ns);
+        sys::arch::time::nanowait(ns);
     }
 
     fn clear_interrupt(&mut self) -> u8 {
@@ -147,7 +147,7 @@ impl Bus {
             // Bit 7 => 1
             self.drive_register.write(0xA0 | (drive << 4))
         }
-        sys::time::nanowait(400); // Wait at least 400 ns
+        sys::arch::time::nanowait(400); // Wait at least 400 ns
         self.poll(Status::BSY, false)?;
         self.poll(Status::DRQ, false)?;
         Ok(())
@@ -280,7 +280,7 @@ pub fn init() {
     }
 
     for drive in list() {
-        log::info!("ATA {}:{} {}\n", drive.bus, drive.dsk, drive);
+        log::info!("ATA {}:{} {}", drive.bus, drive.dsk, drive);
     }
 }
 

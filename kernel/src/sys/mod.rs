@@ -1,21 +1,16 @@
-pub mod acpi;
+pub mod arch;
+pub mod drivers;
+
 pub mod allocator;
-pub mod apic;
-pub mod ata;
-pub mod cmos;
 pub mod clock;
 pub mod console;
 pub mod cpu;
 pub mod exception_handlers;
 pub mod framebuffer;
-pub mod gdt;
-pub mod idt;
-pub mod keyboard;
 pub mod logger;
 pub mod mem;
 pub mod pci;
 pub mod serial;
-pub mod time;
 
 
 pub fn hlt_loop() -> ! {

@@ -610,6 +610,7 @@ dependencies = [
  "linked_list_allocator",
  "log",
  "noto-sans-mono-bitmap",
+ "object",
  "pc-keyboard",
  "pic8259",
  "ps2-mouse",
@@ -714,6 +715,15 @@ name = "noto-sans-mono-bitmap"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a27daf9557165efe1d09b52f97393bf6283cadb0a76fbe64a1061e15553a994a"
+
+[[package]]
+name = "object"
+version = "0.32.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6a622008b6e321afc04970976f62ee297fdbaa6f95318ca343e3eebb9648441"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "os"

@@ -1,5 +1,5 @@
 use crate::sys;
-use bootloader_api::info::{BootInfo, MemoryRegions, MemoryRegionKind};
+use bootloader_api::info::{MemoryRegions, MemoryRegionKind};
 use core::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use x86_64::instructions::interrupts;
 use x86_64::registers::control::Cr3;

@@ -1,4 +1,4 @@
-use crate::sys::idt;
+use super::idt;
 use acpi::platform::interrupt::Apic;
 use x2apic::lapic::LocalApic;
 

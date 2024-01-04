@@ -1,7 +1,7 @@
 use crate::api::clock::DATE_TIME_ZONE;
 use crate::api::fs::{FileIO, IO};
 use crate::sys;
-use crate::sys::cmos::CMOS;
+use crate::sys::arch::cmos::CMOS;
 
 use time::{OffsetDateTime, Duration};
 
@@ -49,7 +49,7 @@ impl FileIO for Uptime {
 
 // NOTE: This clock is monotonic
 pub fn uptime() -> f64 {
-    sys::time::time_between_ticks() * sys::time::ticks() as f64
+    sys::arch::time::time_between_ticks() * sys::arch::time::ticks() as f64
 }
 
 #[derive(Debug, Clone)]
@@ -103,8 +103,8 @@ pub fn realtime() -> f64 {
                   +    60 * rtc.minute as u64
                   +         rtc.second as u64;
 
-    let fract = sys::time::time_between_ticks()
-              * (sys::time::ticks() - sys::time::last_rtc_update()) as f64;
+    let fract = sys::arch::time::time_between_ticks()
+              * (sys::arch::time::ticks() - sys::arch::time::last_rtc_update()) as f64;
 
     (timestamp as f64) + fract
 }

@@ -1,5 +1,6 @@
 use crate::sys;
-use crate::sys::cmos::CMOS;
+use crate::sys::arch::x86_64::{idt, cmos::CMOS};
+
 use core::hint::spin_loop;
 use core::sync::atomic::{AtomicUsize, AtomicU64, Ordering};
 use x2apic::lapic::TimerDivide;
@@ -70,10 +71,10 @@ pub fn rtc_interrupt_handler() {
 
 pub fn init() {
     // PIT timmer
-    sys::idt::set_irq_handler(0, pit_interrupt_handler);
+    idt::set_irq_handler(0, pit_interrupt_handler);
 
     // RTC timmer
-    sys::idt::set_irq_handler(8, rtc_interrupt_handler);
+    idt::set_irq_handler(8, rtc_interrupt_handler);
     CMOS::new().enable_update_interrupt();
 
     // TSC timmer

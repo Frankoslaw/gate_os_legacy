@@ -1,5 +1,5 @@
 use crate::sys::exception_handlers;
-use crate::sys;
+use crate::sys::arch::x86_64::{apic, gdt};
 
 use pic8259::ChainedPics;
 use spinning_top::Spinlock;
@@ -33,7 +33,7 @@ lazy_static! {
         idt.segment_not_present.set_handler_fn(exception_handlers::segment_not_present_handler);
         idt.page_fault.set_handler_fn(exception_handlers::page_fault_handler);
         unsafe {
-            idt.double_fault.set_handler_fn(exception_handlers::double_fault_handler).set_stack_index(sys::gdt::DOUBLE_FAULT_IST_INDEX as u16);
+            idt.double_fault.set_handler_fn(exception_handlers::double_fault_handler).set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX as u16);
         }
 
         idt[interrupt_index(0) as usize].set_handler_fn(irq0_handler);
@@ -69,7 +69,7 @@ macro_rules! irq_handler {
 
 pub fn end_of_interrupt() {
     unsafe {
-        sys::apic::LOCAL_APIC
+        apic::LOCAL_APIC
             .get()
             .expect("Cannot get Local APIC")
             .lock()

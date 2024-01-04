@@ -150,7 +150,7 @@ pub fn read_char() -> char {
     sys::console::disable_echo();
     sys::console::enable_raw();
     loop {
-        sys::time::halt();
+        sys::arch::time::halt();
         let res = interrupts::without_interrupts(|| {
             let mut stdin = STDIN.lock();
             if !stdin.is_empty() {
@@ -169,7 +169,7 @@ pub fn read_char() -> char {
 
 pub fn read_line() -> String {
     loop {
-        sys::time::halt();
+        sys::arch::time::halt();
         let res = interrupts::without_interrupts(|| {
             let mut stdin = STDIN.lock();
             match stdin.chars().next_back() {

@@ -55,11 +55,11 @@ pub fn set_keyboard(layout: &str) -> bool {
 }
 
 pub fn init() {
-    set_keyboard(option_env!("MOROS_KEYBOARD").unwrap_or("qwerty"));
-    sys::idt::set_irq_handler(1, interrupt_handler);
+    set_keyboard(option_env!("GATE_OS_KEYBOARD").unwrap_or("qwerty"));
+    sys::arch::idt::set_irq_handler(1, interrupt_handler);
     unsafe {
-        sys::apic::io_apic::register_io_apic_entry(
-            sys::idt::interrupt_index(1),
+        sys::arch::apic::io_apic::register_io_apic_entry(
+            sys::arch::idt::interrupt_index(1),
             1,
         );
     }
@@ -93,8 +93,8 @@ fn interrupt_handler() {
                 KeyCode::LControl | KeyCode::RControl | KeyCode::RControl2 => CTRL.store(event.state == KeyState::Down, ord),
                 _ => {}
             }
-            let is_alt = ALT.load(ord);
-            let is_ctrl = CTRL.load(ord);
+            let _is_alt = ALT.load(ord);
+            let _is_ctrl = CTRL.load(ord);
             let is_shift = SHIFT.load(ord);
             if let Some(key) = keyboard.process_keyevent(event) {
                 match key {

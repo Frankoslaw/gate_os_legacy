@@ -82,7 +82,7 @@ pub fn print_fmt(args: fmt::Arguments) {
 
 pub fn init() {
     SERIAL.lock().init();
-    sys::idt::set_irq_handler(4, interrupt_handler);
+    sys::arch::idt::set_irq_handler(4, interrupt_handler);
 }
 
 fn interrupt_handler() {
