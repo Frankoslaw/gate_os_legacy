@@ -1,2 +1,2 @@
-pub mod keyboard;
 pub mod ata;
+pub mod keyboard;

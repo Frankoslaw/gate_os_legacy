@@ -1,6 +1,6 @@
 use crate::api::process::ExitCode;
-use crate::sys::fs::{Resource, Device};
 use crate::sys::console::Console;
+use crate::sys::fs::{Device, Resource};
 
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
@@ -25,7 +25,8 @@ pub static PID: AtomicUsize = AtomicUsize::new(0);
 pub static MAX_PID: AtomicUsize = AtomicUsize::new(1);
 
 lazy_static! {
-    pub static ref PROCESS_TABLE: RwLock<[Box<Process>; MAX_PROCS]> = RwLock::new([(); MAX_PROCS].map(|_| Box::new(Process::new())));
+    pub static ref PROCESS_TABLE: RwLock<[Box<Process>; MAX_PROCS]> =
+        RwLock::new([(); MAX_PROCS].map(|_| Box::new(Process::new())));
 }
 
 #[derive(Clone, Debug)]
@@ -221,11 +222,12 @@ pub fn init_process_addr(addr: u64) {
 
 #[repr(align(8), C)]
 #[derive(Debug, Clone, Copy, Default)]
-pub struct Registers { // Saved scratch registers
+pub struct Registers {
+    // Saved scratch registers
     pub r11: usize,
     pub r10: usize,
-    pub r9:  usize,
-    pub r8:  usize,
+    pub r9: usize,
+    pub r8: usize,
     pub rdi: usize,
     pub rsi: usize,
     pub rdx: usize,
@@ -291,7 +293,9 @@ impl Process {
             return Err(());
         }
 
-        let page_table_frame = sys::mem::frame_allocator().allocate_frame().expect("frame allocation failed");
+        let page_table_frame = sys::mem::frame_allocator()
+            .allocate_frame()
+            .expect("frame allocation failed");
         let page_table = unsafe { sys::mem::create_page_table(page_table_frame) };
         let kernel_page_table = unsafe { sys::mem::active_page_table() };
 
@@ -301,7 +305,8 @@ impl Process {
         }
 
         let phys_mem_offset = unsafe { sys::mem::PHYS_MEM_OFFSET.unwrap() };
-        let mut mapper = unsafe { OffsetPageTable::new(page_table, VirtAddr::new(phys_mem_offset)) };
+        let mut mapper =
+            unsafe { OffsetPageTable::new(page_table, VirtAddr::new(phys_mem_offset)) };
 
         let proc_size = MAX_PROC_SIZE as u64;
         let code_addr = CODE_ADDR.fetch_add(proc_size, Ordering::SeqCst);
@@ -313,10 +318,12 @@ impl Process {
         let code_ptr = code_addr as *mut u8;
         let code_size = bin.len();
         sys::allocator::alloc_pages(&mut mapper, code_addr, code_size).expect("proc mem alloc");
-        if bin[0..4] == ELF_MAGIC { // ELF binary
+        if bin[0..4] == ELF_MAGIC {
+            // ELF binary
             if let Ok(obj) = object::File::parse(bin) {
                 entry_point_addr = obj.entry();
-                sys::allocator::alloc_pages(&mut mapper, code_addr + entry_point_addr, code_size).expect("proc mem alloc");
+                sys::allocator::alloc_pages(&mut mapper, code_addr + entry_point_addr, code_size)
+                    .expect("proc mem alloc");
                 for segment in obj.segments() {
                     let addr = segment.address() as usize;
                     if let Ok(data) = segment.data() {
@@ -327,7 +334,8 @@ impl Process {
                     }
                 }
             }
-        } else if bin[0..4] == BIN_MAGIC { // Flat binary
+        } else if bin[0..4] == BIN_MAGIC {
+            // Flat binary
             //sys::allocator::alloc_pages(&mut mapper, code_addr, code_size).expect("proc mem alloc");
             for (i, b) in bin.iter().skip(4).enumerate() {
                 unsafe { core::ptr::write(code_ptr.add(i), *b) };
@@ -350,7 +358,16 @@ impl Process {
         let id = MAX_PID.fetch_add(1, Ordering::SeqCst);
         let parent_id = parent.id;
         let proc = Process {
-            id, parent_id, code_addr, stack_addr, entry_point_addr, page_table_frame, data, stack_frame, registers, allocator
+            id,
+            parent_id,
+            code_addr,
+            stack_addr,
+            entry_point_addr,
+            page_table_frame,
+            data,
+            stack_frame,
+            registers,
+            allocator,
         };
 
         let mut process_table = PROCESS_TABLE.write();
@@ -363,24 +380,29 @@ impl Process {
     fn exec(&self, args_ptr: usize, args_len: usize) {
         let page_table = unsafe { sys::process::page_table() };
         let phys_mem_offset = unsafe { sys::mem::PHYS_MEM_OFFSET.unwrap() };
-        let mut mapper = unsafe { OffsetPageTable::new(page_table, VirtAddr::new(phys_mem_offset)) };
+        let mut mapper =
+            unsafe { OffsetPageTable::new(page_table, VirtAddr::new(phys_mem_offset)) };
 
         let heap_addr = self.code_addr + (self.stack_addr - self.code_addr) / 2;
         //debug!("user-args: {:#016X}", heap_addr);
         sys::allocator::alloc_pages(&mut mapper, heap_addr, 1).expect("proc heap alloc");
 
         let args_ptr = ptr_from_addr(args_ptr as u64) as usize;
-        let args: &[&str] = unsafe { core::slice::from_raw_parts(args_ptr as *const &str, args_len) };
+        let args: &[&str] =
+            unsafe { core::slice::from_raw_parts(args_ptr as *const &str, args_len) };
         let mut addr = heap_addr;
-        let vec: Vec<&str> = args.iter().map(|arg| {
-            let ptr = addr as *mut u8;
-            addr += arg.len() as u64;
-            unsafe {
-                let s = core::slice::from_raw_parts_mut(ptr, arg.len());
-                s.copy_from_slice(arg.as_bytes());
-                core::str::from_utf8_unchecked(s)
-            }
-        }).collect();
+        let vec: Vec<&str> = args
+            .iter()
+            .map(|arg| {
+                let ptr = addr as *mut u8;
+                addr += arg.len() as u64;
+                unsafe {
+                    let s = core::slice::from_raw_parts_mut(ptr, arg.len());
+                    s.copy_from_slice(arg.as_bytes());
+                    core::str::from_utf8_unchecked(s)
+                }
+            })
+            .collect();
         let align = core::mem::align_of::<&str>() as u64;
         addr += align - (addr % align);
         let args = vec.as_slice();
@@ -395,7 +417,11 @@ impl Process {
         let heap_addr = addr;
         let heap_size = (self.stack_addr - heap_addr) / 2;
         //debug!("user-heap: {:#016X}..{:#016X}", heap_addr, heap_addr + heap_size);
-        unsafe { self.allocator.lock().init(heap_addr as *mut u8, heap_size as usize) };
+        unsafe {
+            self.allocator
+                .lock()
+                .init(heap_addr as *mut u8, heap_size as usize)
+        };
 
         set_id(self.id); // Change PID
 

@@ -1,8 +1,8 @@
 use crate::sys;
-use crate::sys::arch::x86_64::{idt, cmos::CMOS};
+use crate::sys::arch::x86_64::{cmos::CMOS, idt};
 
 use core::hint::spin_loop;
-use core::sync::atomic::{AtomicUsize, AtomicU64, Ordering};
+use core::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use x2apic::lapic::TimerDivide;
 use x86_64::instructions::interrupts;
 

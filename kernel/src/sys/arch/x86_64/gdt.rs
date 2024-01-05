@@ -12,7 +12,6 @@ pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
 pub const PAGE_FAULT_IST_INDEX: u16 = 1;
 pub const GENERAL_PROTECTION_FAULT_IST_INDEX: u16 = 2;
 
-
 #[allow(dead_code)]
 pub struct Selectors {
     code_selector: SegmentSelector,
@@ -29,7 +28,6 @@ pub struct Gdt {
 lazy_static! {
     static ref TSS: TaskStateSegment = {
         let mut tss = TaskStateSegment::new();
-
 
         tss.privilege_stack_table[0] = {
             static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
@@ -68,7 +66,7 @@ lazy_static! {
                 data_selector,
                 tss_selector,
                 user_code,
-                user_data
+                user_data,
             },
         }
     };

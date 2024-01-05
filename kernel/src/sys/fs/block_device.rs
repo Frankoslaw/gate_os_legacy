@@ -112,7 +112,7 @@ const ATA_CACHE_SIZE: usize = 128;
 #[derive(Clone)]
 pub struct AtaBlockDevice {
     cache: [Option<(u32, Vec<u8>)>; ATA_CACHE_SIZE],
-    dev: sys::drivers::ata::Drive
+    dev: sys::drivers::ata::Drive,
 }
 
 impl AtaBlockDevice {

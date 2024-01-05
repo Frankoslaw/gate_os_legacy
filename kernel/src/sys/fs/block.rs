@@ -22,9 +22,7 @@ impl Block {
 
     pub fn alloc() -> Option<Self> {
         match BitmapBlock::next_free_addr() {
-            None => {
-                None
-            }
+            None => None,
             Some(addr) => {
                 BitmapBlock::alloc(addr);
 
@@ -78,12 +76,14 @@ impl Block {
 }
 
 pub struct LinkedBlock {
-    block: Block
+    block: Block,
 }
 
 impl LinkedBlock {
     pub fn new(addr: u32) -> Self {
-        Self { block: Block::new(addr) }
+        Self {
+            block: Block::new(addr),
+        }
     }
 
     pub fn alloc() -> Option<Self> {
@@ -91,7 +91,9 @@ impl LinkedBlock {
     }
 
     pub fn read(addr: u32) -> Self {
-        Self { block: Block::read(addr) }
+        Self {
+            block: Block::read(addr),
+        }
     }
 
     pub fn write(&self) {

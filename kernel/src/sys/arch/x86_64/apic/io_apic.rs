@@ -1,5 +1,5 @@
-use crate::sys::mem;
 use crate::sys::arch::x86_64::apic;
+use crate::sys::mem;
 use conquer_once::spin::OnceCell;
 use spinning_top::Spinlock;
 use x2apic::ioapic::{IoApic, IrqFlags, RedirectionTableEntry};
@@ -13,15 +13,13 @@ pub unsafe fn init_io_apic(io_apic_address: u64) {
     let mut io_apic = IoApic::new(io_apic_address);
     io_apic.init(IO_APIC_OFFSET);
 
-    IO_APIC.get_or_init(|| {
-        Spinlock::new(io_apic)
-    });
+    IO_APIC.get_or_init(|| Spinlock::new(io_apic));
 }
 
 pub unsafe fn register_io_apic_entry(int_index: u8, irq_index: u8) {
     let mut entry = RedirectionTableEntry::default();
     entry.set_mode(x2apic::ioapic::IrqMode::Fixed);
-    
+
     let lapic_id = apic::LOCAL_APIC.get().unwrap().lock().id() as u8;
     entry.set_dest(lapic_id);
     entry.set_vector(int_index);

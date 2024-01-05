@@ -1,11 +1,10 @@
-use crate::sys;
-use crate::api::process::ExitCode;
 use crate::api::fs::FileIO;
+use crate::api::process::ExitCode;
+use crate::sys;
 use crate::sys::fs::FileInfo;
 use crate::sys::process::Process;
 
 use alloc::vec;
-
 
 pub fn exit(code: ExitCode) -> ExitCode {
     //debug!("syscall::exit(code={})", code as usize);

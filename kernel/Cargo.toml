@@ -16,7 +16,9 @@ bootloader_api = "0.11.4"
 
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 libm = "0.2.8"
+# TODO: Remove spinning top and replace with spin
 spinning_top = "0.3.0"
+spin = "0.9.8"
 usize_conversions = "0.2.0"
 volatile = "0.5.1"
 derive-new = {version = "0.6.0", default-features = false}

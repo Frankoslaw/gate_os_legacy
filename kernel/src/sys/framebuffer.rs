@@ -1,23 +1,22 @@
-use crate::api::vga::{Color, Palette};
 use crate::api::vga::color;
+use crate::api::vga::{Color, Palette};
 use crate::sys;
 
 use bit_field::BitField;
-use core::{fmt, ptr};
-use core::fmt::Write;
 use bootloader_api::info::{FrameBufferInfo, PixelFormat};
+use core::fmt::Write;
+use core::{fmt, ptr};
 use font_constants::BACKUP_CHAR;
 use noto_sans_mono_bitmap::{
     get_raster, get_raster_width, FontWeight, RasterHeight, RasterizedChar,
 };
 
-use spinning_top::Spinlock;
 use conquer_once::spin::OnceCell;
 use lazy_static::lazy_static;
+use spinning_top::Spinlock;
 
 use vte::{Params, Parser, Perform};
 use x86_64::instructions::interrupts;
-
 
 const LINE_SPACING: usize = 2;
 const LETTER_SPACING: usize = 0;
@@ -38,7 +37,6 @@ lazy_static! {
     pub static ref PARSER: Spinlock<Parser> = Spinlock::new(Parser::new());
 }
 pub static FB_WRITER: OnceCell<Spinlock<FrameBufferWriter>> = OnceCell::uninit();
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
@@ -67,7 +65,7 @@ pub struct FrameBufferWriter {
     x_pos: usize,
     y_pos: usize,
     color_code: ColorCode,
-    palette: Palette
+    palette: Palette,
 }
 
 impl FrameBufferWriter {
@@ -78,7 +76,7 @@ impl FrameBufferWriter {
             x_pos: 0,
             y_pos: 0,
             color_code: ColorCode::new(FG, BG),
-            palette: Palette::default()
+            palette: Palette::default(),
         };
         logger.clear();
         logger
@@ -88,7 +86,7 @@ impl FrameBufferWriter {
         (self.x_pos, self.y_pos)
     }
 
-    fn set_position(&mut self, x: usize, y: usize){
+    fn set_position(&mut self, x: usize, y: usize) {
         self.x_pos = x;
         self.y_pos = y;
     }
@@ -128,16 +126,22 @@ impl FrameBufferWriter {
         match byte {
             0x0A => {
                 self.newline();
-            },
-            0x0D => { // Carriage Return
+            }
+            0x0D => {
+                // Carriage Return
                 self.carriage_return()
-            },
-            0x08 => { // Backspace
+            }
+            0x08 => {
+                // Backspace
                 self.x_pos -= 1;
                 self.write_char(' ');
-            },
+            }
             byte => {
-                let ascii_code = if is_printable(byte) { byte } else { BACKUP_CHAR as u8 };
+                let ascii_code = if is_printable(byte) {
+                    byte
+                } else {
+                    BACKUP_CHAR as u8
+                };
                 self.write_char(ascii_code as char);
             }
         }
@@ -176,7 +180,7 @@ impl FrameBufferWriter {
 
         let color = match intensity {
             0..=10 => self.color().1,
-            _ => self.color().0
+            _ => self.color().0,
         };
 
         let color = self.palette.colors[color as usize];
@@ -184,11 +188,11 @@ impl FrameBufferWriter {
         let color = match intensity {
             0 => [color.0, color.1, color.2, 0],
             _ => [
-                (color.0 as u16 * intensity as u16 / 255) as u8, 
+                (color.0 as u16 * intensity as u16 / 255) as u8,
                 (color.1 as u16 * intensity as u16 / 255) as u8,
                 (color.2 as u16 * intensity as u16 / 255) as u8,
-                0
-            ]
+                0,
+            ],
         };
 
         let color = match self.info.pixel_format {
@@ -202,7 +206,7 @@ impl FrameBufferWriter {
                 panic!("pixel format {:?} not supported in logger", other)
             }
         };
-        
+
         let bytes_per_pixel = self.info.bytes_per_pixel;
         let byte_offset = pixel_offset * bytes_per_pixel;
         self.framebuffer[byte_offset..(byte_offset + bytes_per_pixel)]
@@ -226,7 +230,6 @@ impl FrameBufferWriter {
     }
 }
 
-
 /// See https://vt100.net/emu/dec_ansi_parser
 impl Perform for FrameBufferWriter {
     fn print(&mut self, c: char) {
@@ -247,51 +250,56 @@ impl Perform for FrameBufferWriter {
                         0 => {
                             fg = FG;
                             bg = BG;
-                        },
+                        }
                         30..=37 | 90..=97 => {
                             fg = color::from_ansi(param[0] as u8);
-                        },
+                        }
                         40..=47 | 100..=107 => {
                             bg = color::from_ansi((param[0] as u8) - 10);
-                        },
-                        _ => {},
+                        }
+                        _ => {}
                     }
                 }
                 self.set_color(fg, bg);
-            },
-            'A' => { // Cursor Up
+            }
+            'A' => {
+                // Cursor Up
                 let mut n = 1;
                 for param in params.iter() {
                     n = param[0] as usize;
                 }
                 // TODO: Don't go past edge
                 self.x_pos -= n;
-            },
-            'B' => { // Cursor Down
+            }
+            'B' => {
+                // Cursor Down
                 let mut n = 1;
                 for param in params.iter() {
                     n = param[0] as usize;
                 }
                 // TODO: Don't go past edge
                 self.x_pos += n;
-            },
-            'C' => { // Cursor Forward
+            }
+            'C' => {
+                // Cursor Forward
                 let mut n = 1;
                 for param in params.iter() {
                     n = param[0] as usize;
                 }
                 // TODO: Don't go past edge
                 self.x_pos += n;
-            },
-            'D' => { // Cursor Backward
+            }
+            'D' => {
+                // Cursor Backward
                 let mut n = 1;
                 for param in params.iter() {
                     n = param[0] as usize;
                 }
                 // TODO: Don't go past edge
                 self.x_pos -= n;
-            },
-            'G' => { // Cursor Horizontal Absolute
+            }
+            'G' => {
+                // Cursor Horizontal Absolute
                 let y = self.y_pos;
                 let mut x = 1;
                 for param in params.iter() {
@@ -302,8 +310,9 @@ impl Perform for FrameBufferWriter {
                 }
                 self.x_pos = x - 1;
                 self.y_pos = y;
-            },
-            'H' => { // Move cursor
+            }
+            'H' => {
+                // Move cursor
                 let mut x = 1;
                 let mut y = 1;
                 for (i, param) in params.iter().enumerate() {
@@ -318,8 +327,9 @@ impl Perform for FrameBufferWriter {
                 }
                 self.x_pos = x - 1;
                 self.y_pos = y - 1;
-            },
-            'J' => { // Erase in Display
+            }
+            'J' => {
+                // Erase in Display
                 let mut n = 0;
                 for param in params.iter() {
                     n = param[0] as usize;
@@ -331,8 +341,9 @@ impl Perform for FrameBufferWriter {
                 }
                 self.x_pos = 0;
                 self.y_pos = 0;
-            },
-            'K' => { // Erase in Line
+            }
+            'K' => {
+                // Erase in Line
                 todo!();
                 // let (x, y) = (self.x_pos, self.y_pos);
                 // let mut n = 0;
@@ -347,24 +358,26 @@ impl Perform for FrameBufferWriter {
                 // }
                 // self.set_writer_position(x, y);
                 // self.set_cursor_position(x, y);
-            },
-            'h' => { // Enable
+            }
+            'h' => {
+                // Enable
                 for param in params.iter() {
                     match param[0] {
                         12 => self.enable_echo(),
                         _ => return,
                     }
                 }
-            },
-            'l' => { // Disable
+            }
+            'l' => {
+                // Disable
                 for param in params.iter() {
                     match param[0] {
                         12 => self.disable_echo(),
                         _ => return,
                     }
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }
@@ -388,31 +401,34 @@ impl fmt::Write for FrameBufferWriter {
 #[doc(hidden)]
 pub fn print_fmt(args: fmt::Arguments) {
     interrupts::without_interrupts(|| {
-        FB_WRITER.get().unwrap().lock().write_fmt(args).expect("Could not print to VGA");
+        FB_WRITER
+            .get()
+            .unwrap()
+            .lock()
+            .write_fmt(args)
+            .expect("Could not print to VGA");
     });
 }
 
 pub fn cols() -> usize {
-    interrupts::without_interrupts(|| {
-        FB_WRITER.get().unwrap().lock().width()
-    })
+    interrupts::without_interrupts(|| FB_WRITER.get().unwrap().lock().width())
 }
 
 pub fn rows() -> usize {
-    interrupts::without_interrupts(|| {
-        FB_WRITER.get().unwrap().lock().height()
-    })
+    interrupts::without_interrupts(|| FB_WRITER.get().unwrap().lock().height())
 }
 
 pub fn color() -> (Color, Color) {
-    interrupts::without_interrupts(|| {
-        FB_WRITER.get().unwrap().lock().color()
-    })
+    interrupts::without_interrupts(|| FB_WRITER.get().unwrap().lock().color())
 }
 
 pub fn set_color(foreground: Color, background: Color) {
     interrupts::without_interrupts(|| {
-        FB_WRITER.get().unwrap().lock().set_color(foreground, background)
+        FB_WRITER
+            .get()
+            .unwrap()
+            .lock()
+            .set_color(foreground, background)
     })
 }
 
@@ -426,13 +442,9 @@ pub fn is_printable(c: u8) -> bool {
 }
 
 pub fn set_palette(palette: Palette) {
-    interrupts::without_interrupts(|| {
-        FB_WRITER.get().unwrap().lock().set_palette(palette)
-    })
+    interrupts::without_interrupts(|| FB_WRITER.get().unwrap().lock().set_palette(palette))
 }
 
 pub fn init(framebuffer: &'static mut [u8], info: FrameBufferInfo) {
-    FB_WRITER.get_or_init(|| {
-        Spinlock::new(FrameBufferWriter::new(framebuffer, info))
-    });
+    FB_WRITER.get_or_init(|| Spinlock::new(FrameBufferWriter::new(framebuffer, info)));
 }

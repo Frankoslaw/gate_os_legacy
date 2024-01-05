@@ -8,8 +8,8 @@ use core::cmp;
 use core::ops::{Index, IndexMut};
 use linked_list_allocator::LockedHeap;
 use spinning_top::Spinlock;
-use x86_64::structures::paging::OffsetPageTable;
 use x86_64::structures::paging::mapper::MapToError;
+use x86_64::structures::paging::OffsetPageTable;
 use x86_64::structures::paging::{FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB};
 use x86_64::VirtAddr;
 
@@ -19,7 +19,11 @@ static ALLOCATOR: LockedHeap = LockedHeap::empty();
 pub const HEAP_START: u64 = 0x4444_4444_0000;
 
 fn max_memory() -> u64 {
-    option_env!("MOROS_MEMORY").unwrap_or("32").parse::<u64>().unwrap() << 20 // MB
+    option_env!("GATEOS_MEMORY")
+        .unwrap_or("32")
+        .parse::<u64>()
+        .unwrap()
+        << 20 // MB
 }
 
 pub fn init_heap() -> Result<(), MapToError<Size4KiB>> {
@@ -30,7 +34,7 @@ pub fn init_heap() -> Result<(), MapToError<Size4KiB>> {
     // allocator is slow.
     let heap_size = cmp::min(sys::mem::memory_size(), max_memory()) / 2;
     let heap_start = VirtAddr::new(HEAP_START);
-    // sys::process::init_process_addr(HEAP_START + heap_size);
+    sys::process::init_process_addr(HEAP_START + heap_size);
 
     let pages = {
         let heap_end = heap_start + heap_size - 1u64;
@@ -41,14 +45,20 @@ pub fn init_heap() -> Result<(), MapToError<Size4KiB>> {
 
     let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
     for page in pages {
-        let frame = frame_allocator.allocate_frame().ok_or(MapToError::FrameAllocationFailed)?;
+        let frame = frame_allocator
+            .allocate_frame()
+            .ok_or(MapToError::FrameAllocationFailed)?;
         unsafe {
-            mapper.map_to(page, frame, flags, &mut frame_allocator)?.flush();
+            mapper
+                .map_to(page, frame, flags, &mut frame_allocator)?
+                .flush();
         }
     }
 
     unsafe {
-        ALLOCATOR.lock().init(heap_start.as_mut_ptr(), heap_size as usize);
+        ALLOCATOR
+            .lock()
+            .init(heap_start.as_mut_ptr(), heap_size as usize);
     }
 
     Ok(())
@@ -57,7 +67,8 @@ pub fn init_heap() -> Result<(), MapToError<Size4KiB>> {
 pub fn alloc_pages(mapper: &mut OffsetPageTable, addr: u64, size: usize) -> Result<(), ()> {
     //debug!("Alloc pages (addr={:#X}, size={})", addr, size);
     let mut frame_allocator = sys::mem::frame_allocator();
-    let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
+    let flags =
+        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::USER_ACCESSIBLE;
     let pages = {
         let start_page = Page::containing_address(VirtAddr::new(addr));
         let end_page = Page::containing_address(VirtAddr::new(addr + (size as u64) - 1));
@@ -117,7 +128,9 @@ impl PhysBuf {
         let buffer_len = vec.len() - 1;
         let memory_len = phys_addr(&vec[buffer_len]) - phys_addr(&vec[0]);
         if buffer_len == memory_len as usize {
-            Self { buf: Arc::new(Spinlock::new(vec)) }
+            Self {
+                buf: Arc::new(Spinlock::new(vec)),
+            }
         } else {
             Self::from(vec.clone()) // Clone vec and try again
         }

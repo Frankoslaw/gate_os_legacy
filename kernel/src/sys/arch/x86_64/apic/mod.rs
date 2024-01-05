@@ -5,12 +5,10 @@ use x2apic::lapic::LocalApic;
 use conquer_once::spin::OnceCell;
 use spinning_top::Spinlock;
 
-
 pub mod io_apic;
 pub mod local_apic;
 
 pub static LOCAL_APIC: OnceCell<Spinlock<LocalApic>> = OnceCell::uninit();
-
 
 pub fn init(apic_info: Apic) {
     idt::set_irq_handler(2, apic_error_handler);

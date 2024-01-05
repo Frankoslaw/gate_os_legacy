@@ -1,15 +1,17 @@
+use crate::api::syscall;
 use crate::sys;
 use crate::sys::fs::OpenFlag;
-use crate::api::syscall;
 
 use alloc::format;
 use alloc::string::{String, ToString};
-use alloc::vec::Vec;
 use alloc::vec;
-
+use alloc::vec::Vec;
 
 #[derive(Clone, Copy)]
-pub enum IO { Read, Write }
+pub enum IO {
+    Read,
+    Write,
+}
 
 pub trait FileIO {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, ()>;
@@ -73,10 +75,13 @@ pub fn open_device(path: &str) -> Option<usize> {
     syscall::open(path, flags)
 }
 
-
 pub fn read(path: &str, buf: &mut [u8]) -> Result<usize, ()> {
     if let Some(info) = syscall::info(path) {
-        let res = if info.is_device() { open_device(path) } else { open_file(path) };
+        let res = if info.is_device() {
+            open_device(path)
+        } else {
+            open_file(path)
+        };
         if let Some(handle) = res {
             if let Some(bytes) = syscall::read(handle, buf) {
                 syscall::close(handle);

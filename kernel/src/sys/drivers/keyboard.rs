@@ -2,7 +2,9 @@ use crate::sys;
 // use crate::api::syscall;
 
 use core::sync::atomic::{AtomicBool, Ordering};
-use pc_keyboard::{layouts, DecodedKey, Error, HandleControl, KeyState, KeyCode, KeyEvent, Keyboard, ScancodeSet1};
+use pc_keyboard::{
+    layouts, DecodedKey, Error, HandleControl, KeyCode, KeyEvent, KeyState, Keyboard, ScancodeSet1,
+};
 use spinning_top::Spinlock;
 use x86_64::instructions::port::Port;
 
@@ -37,9 +39,21 @@ impl KeyboardLayout {
 
     fn from(name: &str) -> Option<Self> {
         match name {
-            "azerty" => Some(KeyboardLayout::Azerty(Keyboard::new(ScancodeSet1::new(),layouts::Azerty, HandleControl::MapLettersToUnicode))),
-            "dvorak" => Some(KeyboardLayout::Dvorak(Keyboard::new(ScancodeSet1::new(),layouts::Dvorak104Key, HandleControl::MapLettersToUnicode))),
-            "qwerty" => Some(KeyboardLayout::Qwerty(Keyboard::new(ScancodeSet1::new(),layouts::Us104Key, HandleControl::MapLettersToUnicode))),
+            "azerty" => Some(KeyboardLayout::Azerty(Keyboard::new(
+                ScancodeSet1::new(),
+                layouts::Azerty,
+                HandleControl::MapLettersToUnicode,
+            ))),
+            "dvorak" => Some(KeyboardLayout::Dvorak(Keyboard::new(
+                ScancodeSet1::new(),
+                layouts::Dvorak104Key,
+                HandleControl::MapLettersToUnicode,
+            ))),
+            "qwerty" => Some(KeyboardLayout::Qwerty(Keyboard::new(
+                ScancodeSet1::new(),
+                layouts::Us104Key,
+                HandleControl::MapLettersToUnicode,
+            ))),
             _ => None,
         }
     }
@@ -58,10 +72,7 @@ pub fn init() {
     set_keyboard(option_env!("GATE_OS_KEYBOARD").unwrap_or("qwerty"));
     sys::arch::idt::set_irq_handler(1, interrupt_handler);
     unsafe {
-        sys::arch::apic::io_apic::register_io_apic_entry(
-            sys::arch::idt::interrupt_index(1),
-            1,
-        );
+        sys::arch::apic::io_apic::register_io_apic_entry(sys::arch::idt::interrupt_index(1), 1);
     }
 }
 
@@ -88,9 +99,15 @@ fn interrupt_handler() {
         if let Ok(Some(event)) = keyboard.add_byte(scancode) {
             let ord = Ordering::Relaxed;
             match event.code {
-                KeyCode::LAlt | KeyCode::RAltGr | KeyCode::RAlt2 => ALT.store(event.state == KeyState::Down, ord),
-                KeyCode::LShift | KeyCode::RShift => SHIFT.store(event.state == KeyState::Down, ord),
-                KeyCode::LControl | KeyCode::RControl | KeyCode::RControl2 => CTRL.store(event.state == KeyState::Down, ord),
+                KeyCode::LAlt | KeyCode::RAltGr | KeyCode::RAlt2 => {
+                    ALT.store(event.state == KeyState::Down, ord)
+                }
+                KeyCode::LShift | KeyCode::RShift => {
+                    SHIFT.store(event.state == KeyState::Down, ord)
+                }
+                KeyCode::LControl | KeyCode::RControl | KeyCode::RControl2 => {
+                    CTRL.store(event.state == KeyState::Down, ord)
+                }
                 _ => {}
             }
             let _is_alt = ALT.load(ord);
@@ -99,15 +116,15 @@ fn interrupt_handler() {
             if let Some(key) = keyboard.process_keyevent(event) {
                 match key {
                     // DecodedKey::Unicode('\u{7f}') if is_alt && is_ctrl => syscall::reboot(), // Ctrl-Alt-Del
-                    DecodedKey::RawKey(KeyCode::PageUp)     => send_csi("5~"),
-                    DecodedKey::RawKey(KeyCode::PageDown)   => send_csi("6~"),
-                    DecodedKey::RawKey(KeyCode::ArrowUp)    => send_csi("A"),
-                    DecodedKey::RawKey(KeyCode::ArrowDown)  => send_csi("B"),
+                    DecodedKey::RawKey(KeyCode::PageUp) => send_csi("5~"),
+                    DecodedKey::RawKey(KeyCode::PageDown) => send_csi("6~"),
+                    DecodedKey::RawKey(KeyCode::ArrowUp) => send_csi("A"),
+                    DecodedKey::RawKey(KeyCode::ArrowDown) => send_csi("B"),
                     DecodedKey::RawKey(KeyCode::ArrowRight) => send_csi("C"),
-                    DecodedKey::RawKey(KeyCode::ArrowLeft)  => send_csi("D"),
-                    DecodedKey::Unicode('\t') if is_shift   => send_csi("Z"), // Convert Shift-Tab into Backtab
-                    DecodedKey::Unicode(c)                  => send_key(c),
-                    _ => {},
+                    DecodedKey::RawKey(KeyCode::ArrowLeft) => send_csi("D"),
+                    DecodedKey::Unicode('\t') if is_shift => send_csi("Z"), // Convert Shift-Tab into Backtab
+                    DecodedKey::Unicode(c) => send_key(c),
+                    _ => {}
                 };
             }
         }

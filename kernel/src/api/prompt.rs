@@ -1,5 +1,5 @@
-use crate::{print, println};
 use crate::api::{console, io};
+use crate::{print, println};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use vte::{Params, Parser, Perform};
@@ -27,20 +27,23 @@ impl Prompt {
         let mut parser = Parser::new();
         while let Some(c) = io::stdin().read_char() {
             match c {
-                console::ETX_KEY => { // End of Text (^C)
+                console::ETX_KEY => {
+                    // End of Text (^C)
                     println!();
                     return Some(String::new());
-                },
-                console::EOT_KEY => { // End of Transmission (^D)
+                }
+                console::EOT_KEY => {
+                    // End of Transmission (^D)
                     println!();
                     return None;
-                },
-                '\n' => { // New Line
+                }
+                '\n' => {
+                    // New Line
                     println!();
                     return Some(self.line.iter().collect());
-                },
+                }
                 c => {
-                   for b in c.to_string().as_bytes() {
+                    for b in c.to_string().as_bytes() {
                         parser.advance(self, *b);
                     }
                 }
@@ -91,7 +94,7 @@ impl Perform for Prompt {
         let c = b as char;
         match c {
             '\x08' => self.handle_backspace_key(),
-            _ => {},
+            _ => {}
         }
     }
 
@@ -106,12 +109,13 @@ impl Perform for Prompt {
         match c {
             '~' => {
                 for param in params.iter() {
-                    if param[0] == 3 { // Delete
+                    if param[0] == 3 {
+                        // Delete
                         self.handle_delete_key();
                     }
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }

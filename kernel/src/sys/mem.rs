@@ -1,9 +1,12 @@
 use crate::sys;
-use bootloader_api::info::{MemoryRegions, MemoryRegionKind};
+use bootloader_api::info::{MemoryRegionKind, MemoryRegions};
 use core::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use x86_64::instructions::interrupts;
 use x86_64::registers::control::Cr3;
-use x86_64::structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame, Size4KiB, Translate, PageTableFlags, Page, Mapper};
+use x86_64::structures::paging::{
+    FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PhysFrame, Size4KiB,
+    Translate,
+};
 use x86_64::{PhysAddr, VirtAddr};
 
 pub static mut PHYS_MEM_OFFSET: Option<u64> = None;
@@ -26,7 +29,12 @@ pub fn init(phys_mem_offset: u64, memory_regions: &'static MemoryRegions) {
 
         unsafe { PHYS_MEM_OFFSET.replace(phys_mem_offset) };
         unsafe { MEMORY_MAP.replace(memory_regions) };
-        unsafe { MAPPER.replace(OffsetPageTable::new(active_page_table(), VirtAddr::new(phys_mem_offset))) };
+        unsafe {
+            MAPPER.replace(OffsetPageTable::new(
+                active_page_table(),
+                VirtAddr::new(phys_mem_offset),
+            ))
+        };
 
         sys::allocator::init_heap().expect("heap initialization failed");
     });
@@ -57,7 +65,11 @@ pub fn identity_map(physical_address: u64, flags: Option<PageTableFlags>) {
     let physical_frame: PhysFrame = PhysFrame::containing_address(physical_address);
     unsafe {
         mapper()
-            .identity_map(physical_frame, flags, &mut BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()))
+            .identity_map(
+                physical_frame,
+                flags,
+                &mut BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()),
+            )
             .expect("Failed to identity map")
             .flush();
     }
@@ -69,7 +81,7 @@ pub fn range_map(start: VirtAddr, size: u64, flags: Option<PageTableFlags>) {
     let heap_end_page = Page::containing_address(end);
     let page_range = Page::range_inclusive(heap_start_page, heap_end_page);
     for page in page_range {
-        let frame = unsafe {BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()) }
+        let frame = unsafe { BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()) }
             .allocate_frame()
             .expect("Failed to allocate for range map");
         let flags = flags.unwrap_or_else(|| {
@@ -77,7 +89,12 @@ pub fn range_map(start: VirtAddr, size: u64, flags: Option<PageTableFlags>) {
         });
         unsafe {
             mapper()
-                .map_to(page, frame, flags, &mut BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()))
+                .map_to(
+                    page,
+                    frame,
+                    flags,
+                    &mut BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()),
+                )
                 .expect("Failed to map range")
                 .flush();
         }
@@ -104,7 +121,7 @@ pub unsafe fn create_page_table(frame: PhysFrame) -> &'static mut PageTable {
 }
 
 pub struct BootInfoFrameAllocator {
-    memory_map: &'static MemoryRegions
+    memory_map: &'static MemoryRegions,
 }
 
 impl BootInfoFrameAllocator {

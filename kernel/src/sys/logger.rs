@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 use crate::api::vga::Color;
-use crate::sys::framebuffer::{FB_WRITER, set_color, FG, BG};
+use crate::sys::framebuffer::{set_color, BG, FB_WRITER, FG};
 // use crate::sys::serial::SERIAL_WRITER;
 use conquer_once::spin::OnceCell;
-use log::{LevelFilter, Level};
 use core::fmt::Write;
+use log::{Level, LevelFilter};
 
 pub static LOGGER: OnceCell<LockedLogger> = OnceCell::uninit();
 
@@ -14,10 +14,7 @@ pub struct LockedLogger {
 }
 
 impl LockedLogger {
-    pub fn new(
-        frame_buffer_logger_status: bool,
-        serial_logger_status: bool,
-    ) -> Self {
+    pub fn new(frame_buffer_logger_status: bool, serial_logger_status: bool) -> Self {
         LockedLogger {
             fb_enable: frame_buffer_logger_status,
             serial_enable: serial_logger_status,
@@ -43,12 +40,11 @@ impl log::Log for LockedLogger {
             let mut fb = framebuffer.lock();
             write!(fb, "[{:5}]: ", record.level()).unwrap();
 
-            unsafe{ framebuffer.force_unlock() };
+            unsafe { framebuffer.force_unlock() };
             set_color(FG, BG);
 
             let mut fb = framebuffer.lock();
             write!(fb, "{}\r\n", record.args()).unwrap();
-
         }
 
         // if let Some(serial) = SERIAL_WRITER.get() {
@@ -92,14 +88,9 @@ const SERIAL_LOGGER_STATUS: bool = true;
 // TODO: read from bootloader init
 const LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 
-
 pub fn init() {
-    let logger = LOGGER.get_or_init(move || {
-        LockedLogger::new(
-            FRAME_BUFFER_LOGGER_STATUS,
-            SERIAL_LOGGER_STATUS,
-        )
-    });
+    let logger = LOGGER
+        .get_or_init(move || LockedLogger::new(FRAME_BUFFER_LOGGER_STATUS, SERIAL_LOGGER_STATUS));
     log::set_logger(logger).expect("logger already set");
     log::set_max_level(LOG_LEVEL);
 }
