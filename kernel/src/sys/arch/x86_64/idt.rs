@@ -1,11 +1,14 @@
-use crate::sys::exception_handlers;
+use super::exception_handlers;
+use crate::sys;
 use crate::sys::arch::x86_64::{apic, gdt};
+use crate::sys::process::Registers;
 
+use core::arch::asm;
 use pic8259::ChainedPics;
 use spinning_top::Spinlock;
 use lazy_static::lazy_static;
 use x86_64::instructions::interrupts;
-use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
+use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, InterruptStackFrameValue};
 
 
 const IRQ_INDEX: u8 = 0x20;
@@ -34,6 +37,10 @@ lazy_static! {
         idt.page_fault.set_handler_fn(exception_handlers::page_fault_handler);
         unsafe {
             idt.double_fault.set_handler_fn(exception_handlers::double_fault_handler).set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX as u16);
+            idt[0x80].
+                set_handler_fn(core::mem::transmute(wrapped_syscall_handler as *mut fn())).
+                //set_stack_index(sys::gdt::GENERAL_PROTECTION_FAULT_IST_INDEX).
+                set_privilege_level(x86_64::PrivilegeLevel::Ring3);
         }
 
         idt[interrupt_index(0) as usize].set_handler_fn(irq0_handler);
@@ -103,6 +110,76 @@ pub fn init() {
 
 fn disable_legacy_pic() {
     unsafe { ChainedPics::new(0x20, 0x28).disable() }
+}
+
+// Naked function wrapper saving all scratch registers to the stack
+// See: https://os.phil-opp.com/returning-from-exceptions/#a-naked-wrapper-function
+macro_rules! wrap {
+    ($fn: ident => $w:ident) => {
+        #[naked]
+        pub unsafe extern "sysv64" fn $w() {
+            asm!(
+                "push rax",
+                "push rcx",
+                "push rdx",
+                "push rsi",
+                "push rdi",
+                "push r8",
+                "push r9",
+                "push r10",
+                "push r11",
+                "mov rsi, rsp", // Arg #2: register list
+                "mov rdi, rsp", // Arg #1: interupt frame
+                "add rdi, 9 * 8", // 9 registers * 8 bytes
+                "call {}",
+                "pop r11",
+                "pop r10",
+                "pop r9",
+                "pop r8",
+                "pop rdi",
+                "pop rsi",
+                "pop rdx",
+                "pop rcx",
+                "pop rax",
+                "iretq",
+                sym $fn,
+                options(noreturn)
+            );
+        }
+    };
+}
+
+wrap!(syscall_handler => wrapped_syscall_handler);
+
+// NOTE: We can't use "x86-interrupt" for syscall_handler because we need to
+// return a result in the RAX register and it will be overwritten when the
+// context of the caller is restored.
+extern "sysv64" fn syscall_handler(stack_frame: &mut InterruptStackFrame, regs: &mut Registers) {
+    // The registers order follow the System V ABI convention
+    let n    = regs.rax;
+    let arg1 = regs.rdi;
+    let arg2 = regs.rsi;
+    let arg3 = regs.rdx;
+    let arg4 = regs.r8;
+
+    if n == sys::syscall::number::SPAWN { // Backup CPU context
+        sys::process::set_stack_frame(**stack_frame);
+        sys::process::set_registers(*regs);
+    }
+
+    let res = sys::syscall::dispatcher(n, arg1, arg2, arg3, arg4);
+
+    if n == sys::syscall::number::EXIT { // Restore CPU context
+        let sf = sys::process::stack_frame();
+        unsafe {
+            //stack_frame.as_mut().write(sf);
+            core::ptr::write_volatile(stack_frame.as_mut().extract_inner() as *mut InterruptStackFrameValue, sf); // FIXME
+            core::ptr::write_volatile(regs, sys::process::registers());
+        }
+    }
+
+    regs.rax = res;
+    end_of_interrupt();
 }
 
 pub fn set_irq_handler(irq: u8, handler: fn()) {

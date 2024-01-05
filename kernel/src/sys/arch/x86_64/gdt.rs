@@ -14,16 +14,16 @@ pub const GENERAL_PROTECTION_FAULT_IST_INDEX: u16 = 2;
 
 
 #[allow(dead_code)]
-struct Selectors {
+pub struct Selectors {
     code_selector: SegmentSelector,
     data_selector: SegmentSelector,
     tss_selector: SegmentSelector,
     pub user_code: SegmentSelector,
     pub user_data: SegmentSelector,
 }
-struct Gdt {
+pub struct Gdt {
     gdt: GlobalDescriptorTable,
-    selector: Selectors,
+    pub selector: Selectors,
 }
 
 lazy_static! {
@@ -53,7 +53,7 @@ lazy_static! {
 }
 
 lazy_static! {
-    static ref GDT: Gdt = {
+    pub static ref GDT: Gdt = {
         let mut gdt = GlobalDescriptorTable::new();
         let code_selector = gdt.add_entry(Descriptor::kernel_code_segment());
         let data_selector = gdt.add_entry(Descriptor::kernel_data_segment());
