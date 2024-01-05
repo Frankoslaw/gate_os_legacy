@@ -7,6 +7,8 @@ use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
 
+pub use crate::sys::fs::{FileInfo, DeviceType};
+
 #[derive(Clone, Copy)]
 pub enum IO {
     Read,
@@ -50,6 +52,10 @@ pub fn realpath(pathname: &str) -> String {
     }
 }
 
+pub fn exists(path: &str) -> bool {
+    syscall::info(path).is_some()
+}
+
 pub fn open_file(path: &str) -> Option<usize> {
     let flags = 0;
     syscall::open(path, flags)
@@ -70,9 +76,23 @@ pub fn open_dir(path: &str) -> Option<usize> {
     syscall::open(path, flags)
 }
 
+pub fn create_dir(path: &str) -> Option<usize> {
+    let flags = OpenFlag::Create as usize | OpenFlag::Dir as usize;
+    syscall::open(path, flags)
+}
+
 pub fn open_device(path: &str) -> Option<usize> {
     let flags = OpenFlag::Device as usize;
     syscall::open(path, flags)
+}
+
+pub fn create_device(path: &str, kind: DeviceType) -> Option<usize> {
+    let flags = OpenFlag::Create as usize | OpenFlag::Device as usize;
+    if let Some(handle) = syscall::open(path, flags) {
+        syscall::write(handle, &kind.buf());
+        return Some(handle);
+    }
+    None
 }
 
 pub fn read(path: &str, buf: &mut [u8]) -> Result<usize, ()> {

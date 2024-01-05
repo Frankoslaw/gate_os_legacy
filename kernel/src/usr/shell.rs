@@ -1,6 +1,6 @@
 use crate::api::console::Style;
 use crate::api::prompt::Prompt;
-use crate::{api, print, println, sys};
+use crate::{api, sys, usr, print, println};
 use api::process::ExitCode;
 
 use alloc::format;
@@ -24,7 +24,7 @@ pub fn prompt_string(success: bool) -> String {
     format!("{}\n{}", line1, line2)
 }
 
-fn exec(cmd: &str) -> Result<(), ExitCode> {
+pub fn exec(cmd: &str) -> Result<(), ExitCode> {
     let args: Vec<&str> = cmd.trim().split(' ').collect();
 
     if args.is_empty() {
@@ -33,11 +33,14 @@ fn exec(cmd: &str) -> Result<(), ExitCode> {
 
     let res = match args[0] {
         "" => Ok(()),
-        "panic" => panic!("{}", args[1..].join(" ")),
+        "disk"     => usr::disk::main(&args),
         "hello" => {
             println!("Hello world!");
             Ok(())
         }
+        "install"  => usr::install::main(&args),
+        "quit"     => Err(ExitCode::ShellExit),
+        "panic" => panic!("{}", args[1..].join(" ")),
         _ => {
             println!("Command not found");
             Ok(())
