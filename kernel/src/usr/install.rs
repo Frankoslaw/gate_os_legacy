@@ -1,4 +1,4 @@
-use crate::{api, sys, usr, print, println};
+use crate::{api, sys, usr};
 use crate::api::console::Style;
 use crate::api::fs;
 use crate::api::fs::DeviceType;

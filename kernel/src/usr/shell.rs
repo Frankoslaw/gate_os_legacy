@@ -1,7 +1,10 @@
 use crate::api::console::Style;
+use crate::api::fs;
 use crate::api::prompt::Prompt;
-use crate::{api, sys, usr, print, println};
+use crate::api::syscall;
+use crate::{api, sys, usr};
 use api::process::ExitCode;
+use crate::sys::fs::FileType;
 
 use alloc::format;
 use alloc::string::String;
@@ -34,20 +37,57 @@ pub fn exec(cmd: &str) -> Result<(), ExitCode> {
     let res = match args[0] {
         "" => Ok(()),
         "disk"     => usr::disk::main(&args),
+        "elf"      => usr::elf::main(&args),
         "hello" => {
             println!("Hello world!");
             Ok(())
-        }
+        },
+        "hex"      => usr::hex::main(&args),
         "install"  => usr::install::main(&args),
+        "list"     => usr::list::main(&args),
+        "read"     => usr::read::main(&args),
         "quit"     => Err(ExitCode::ShellExit),
         "panic" => panic!("{}", args[1..].join(" ")),
-        _ => {
-            println!("Command not found");
-            Ok(())
+        _          => {
+            let mut path = fs::realpath(args[0]);
+            if path.len() > 1 {
+                path = path.trim_end_matches('/').into();
+            }
+            match syscall::info(&path).map(|info| info.kind()) {
+                Some(FileType::Dir) => {
+                    sys::process::set_dir(&path);
+                    Ok(())
+                }
+                Some(FileType::File) => {
+                    spawn(&path, &args)
+                }
+                _ => {
+                    let path = format!("/bin/{}", args[0]);
+                    spawn(&path, &args)
+                }
+            }
         }
     };
 
     res
+}
+
+fn spawn(path: &str, args: &[&str]) -> Result<(), ExitCode> {
+    match api::process::spawn(path, args) {
+        Err(ExitCode::ExecError) => {
+            log::error!("Could not execute '{}'", args[0]);
+            Err(ExitCode::ExecError)
+        }
+        Err(ExitCode::ReadError) => {
+            log::error!("Could not read '{}'", args[0]);
+            Err(ExitCode::ReadError)
+        }
+        Err(ExitCode::OpenError) => {
+            log::error!("Could not open '{}'", args[0]);
+            Err(ExitCode::OpenError)
+        }
+        res => res,
+    }
 }
 
 fn repl() -> Result<(), ExitCode> {

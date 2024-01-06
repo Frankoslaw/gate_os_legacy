@@ -72,17 +72,6 @@ impl LockedLogger {
     }
 }
 
-#[macro_export]
-macro_rules! print {
-    ($($arg:tt)*) => ($crate::sys::logger::LOGGER.get().unwrap()._print(format_args!($($arg)*)));
-}
-
-#[macro_export]
-macro_rules! println {
-    () => ($crate::print!("\r\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\r\n", format_args!($($arg)*)));
-}
-
 const FRAME_BUFFER_LOGGER_STATUS: bool = true;
 const SERIAL_LOGGER_STATUS: bool = true;
 // TODO: read from bootloader init

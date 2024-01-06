@@ -8,7 +8,7 @@ use core::panic::PanicInfo;
 
 use bootloader_api::config::{BootloaderConfig, Mapping};
 use bootloader_api::{entry_point, BootInfo};
-use kernel::{print, usr};
+use kernel::{print, println, usr, sys};
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
@@ -22,12 +22,17 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     kernel::init(boot_info);
     print!("\x1b[?25h");
 
-    user_boot();
 
-    loop {}
+    loop {
+        user_boot();
+    }
 }
 
 fn user_boot() {
+    if !sys::fs::is_mounted() {
+        println!("MFS is not mounted to '/'");
+    }
+
     usr::shell::main().ok();
 }
 

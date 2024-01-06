@@ -2,7 +2,7 @@ use crate::api::console::Style;
 use crate::api::io;
 use crate::api::process::ExitCode;
 use crate::api::unit::SizeUnit;
-use crate::{sys, print, println};
+use crate::sys;
 use crate::sys::drivers::ata::Drive;
 
 

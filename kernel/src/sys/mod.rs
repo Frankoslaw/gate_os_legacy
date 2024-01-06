@@ -14,6 +14,13 @@ pub mod process;
 pub mod serial;
 pub mod syscall;
 
+#[macro_export]
+macro_rules! printk {
+    ($($arg:tt)*) => ({
+        $crate::sys::console::print_fmt(format_args!($($arg)*));
+    });
+}
+
 pub fn hlt_loop() -> ! {
     loop {
         x86_64::instructions::hlt();

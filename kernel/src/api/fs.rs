@@ -168,3 +168,26 @@ pub fn reopen(path: &str, handle: usize, append_mode: bool) -> Result<usize, ()>
     }
     Err(())
 }
+
+pub fn read_dir(path: &str) -> Result<Vec<FileInfo>, ()> {
+    if let Some(info) = syscall::info(path) {
+        if info.is_dir() {
+            if let Ok(buf) = read_to_bytes(path) {
+                let mut res = Vec::new();
+                let mut i = 0;
+                let n = buf.len();
+                while i < n {
+                    let j = i + 14 + buf[i + 13] as usize;
+                    if j > n {
+                        break;
+                    }
+                    let info = FileInfo::from(&buf[i..j]);
+                    res.push(info);
+                    i = j;
+                }
+                return Ok(res);
+            }
+        }
+    }
+    Err(())
+}
