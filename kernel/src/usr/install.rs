@@ -20,6 +20,8 @@ pub fn copy_files(verbose: bool) {
     create_dir("/usr", verbose); // User directories
     create_dir("/var", verbose); // Variables
 
+    copy_file("/bin/print", include_bytes!("../../dsk/bin/print"), verbose);
+
     create_dir("/dev/clk", verbose); // Clock
     create_dev("/dev/clk/uptime", DeviceType::Uptime, verbose);
     create_dev("/dev/clk/realtime", DeviceType::Realtime, verbose);

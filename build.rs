@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, fs::{self, File}, process::Command};
 
 fn main() {
     // set by cargo, build scripts should use this directory for output files
@@ -6,6 +6,27 @@ fn main() {
     // set by cargo's artifact dependency feature, see
     // https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#artifact-dependencies
     let kernel = PathBuf::from(std::env::var_os("CARGO_BIN_FILE_KERNEL_kernel").unwrap());
+
+
+    // rust userspace binaries
+    for path in fs::read_dir("./kernel/src/bin/").unwrap() {
+        let rust_source_path = path.unwrap().path();
+        let executable_name = rust_source_path.file_stem().unwrap().to_str().unwrap();
+
+        File::create(format!("./kernel/dsk/bin/{}", executable_name)).unwrap();
+        Command::new("cargo")
+            .current_dir("./kernel")
+            .arg("rustc")
+            .args(&["--no-default-features", "--features", "userspace", "--release", "--bin", executable_name])
+            .status()
+            .unwrap();
+
+        fs::copy(
+            format!("./target/x86_64-unknown-none/release/{}", executable_name), 
+            format!("./kernel/dsk/bin/{}", executable_name)
+        ).unwrap();
+    }
+
 
     let uefi = true;
     let mut boot_config = bootloader::BootConfig::default();
