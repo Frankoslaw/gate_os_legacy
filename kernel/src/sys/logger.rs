@@ -1,24 +1,15 @@
 #![allow(dead_code)]
-use crate::api::vga::Color;
-use crate::sys::framebuffer::{set_color, BG, FB_WRITER, FG};
-// use crate::sys::serial::SERIAL_WRITER;
+use crate::{api::console::Style, printk};
 use conquer_once::spin::OnceCell;
-use core::fmt::Write;
 use log::{Level, LevelFilter};
 
 pub static LOGGER: OnceCell<LockedLogger> = OnceCell::uninit();
 
-pub struct LockedLogger {
-    fb_enable: bool,
-    serial_enable: bool,
-}
+pub struct LockedLogger {}
 
 impl LockedLogger {
-    pub fn new(frame_buffer_logger_status: bool, serial_logger_status: bool) -> Self {
-        LockedLogger {
-            fb_enable: frame_buffer_logger_status,
-            serial_enable: serial_logger_status,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
@@ -28,58 +19,27 @@ impl log::Log for LockedLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        if let Some(framebuffer) = FB_WRITER.get() {
-            match record.level() {
-                Level::Trace => set_color(Color::Pink, BG),
-                Level::Debug => set_color(Color::LightCyan, BG),
-                Level::Info => set_color(Color::LightGreen, BG),
-                Level::Warn => set_color(Color::Yellow, BG),
-                Level::Error => set_color(Color::LightRed, BG),
-            }
+        let csi_color = match record.level() {
+            Level::Trace => Style::color("Pink"),
+            Level::Debug => Style::color("LightCyan"),
+            Level::Info => Style::color("LightGreen"),
+            Level::Warn => Style::color("Yellow"),
+            Level::Error => Style::color("LightRed"),
+        };
+        let csi_reset = Style::reset();
 
-            let mut fb = framebuffer.lock();
-            write!(fb, "[{:5}]: ", record.level()).unwrap();
-
-            unsafe { framebuffer.force_unlock() };
-            set_color(FG, BG);
-
-            let mut fb = framebuffer.lock();
-            write!(fb, "{}\r\n", record.args()).unwrap();
-        }
-
-        // if let Some(serial) = SERIAL_WRITER.get() {
-        //     let mut serial = serial.lock();
-        //     writeln!(serial, "{:5}: {}\r\n", record.level(), record.args()).unwrap();
-        // }
+        printk!("{}[{:5}]{}: {}\r\n", csi_color, record.level(), csi_reset, record.args());
     }
 
     fn flush(&self) {}
 }
 
-use core::fmt;
-
-impl LockedLogger {
-    pub fn _print(&self, args: fmt::Arguments) {
-        if let Some(framebuffer) = FB_WRITER.get() {
-            let mut framebuffer = framebuffer.lock();
-            framebuffer.write_fmt(args).unwrap();
-        }
-
-        // if let Some(serial) = SERIAL_WRITER.get() {
-        //     let mut serial = serial.lock();
-        //     serial.write_fmt(args).unwrap();
-        // }
-    }
-}
-
-const FRAME_BUFFER_LOGGER_STATUS: bool = true;
-const SERIAL_LOGGER_STATUS: bool = true;
 // TODO: read from bootloader init
 const LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 
 pub fn init() {
     let logger = LOGGER
-        .get_or_init(move || LockedLogger::new(FRAME_BUFFER_LOGGER_STATUS, SERIAL_LOGGER_STATUS));
+        .get_or_init(|| LockedLogger::new());
     log::set_logger(logger).expect("logger already set");
     log::set_max_level(LOG_LEVEL);
 }

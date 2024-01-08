@@ -1,6 +1,5 @@
 #![no_std]
 #![cfg_attr(test, no_main)]
-#![feature(custom_test_frameworks)]
 #![feature(abi_x86_interrupt)]
 #![feature(naked_functions)]
 #![feature(alloc_error_handler)]
@@ -18,6 +17,7 @@ pub mod usr;
 
 use bootloader_api::BootInfo;
 
+
 const KERNEL_SIZE: usize = 2 << 20; // 2 MB
 
 pub fn init(boot_info: &'static mut BootInfo) {
@@ -25,8 +25,13 @@ pub fn init(boot_info: &'static mut BootInfo) {
     let fb_info = framebuffer.info().clone();
     let fb_buffer = framebuffer.buffer_mut();
 
-    sys::framebuffer::init(fb_buffer, fb_info);
-    sys::serial::init();
+    if cfg!(feature = "video") {
+        sys::framebuffer::init(fb_buffer, fb_info);
+    }
+    if cfg!(feature = "serial") {
+        sys::drivers::serial::init();
+    }
+
     sys::logger::init();
     sys::arch::gdt::init();
 
@@ -44,6 +49,10 @@ pub fn init(boot_info: &'static mut BootInfo) {
 
     sys::arch::idt::init();
     sys::arch::apic::init(apic_info); // Enable interrupts
+    if cfg!(feature = "serial") {
+        sys::drivers::serial::init_late();
+    }
+
     sys::drivers::keyboard::init();
     sys::arch::time::init();
 

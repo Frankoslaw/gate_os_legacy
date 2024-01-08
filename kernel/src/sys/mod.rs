@@ -11,7 +11,6 @@ pub mod logger;
 pub mod mem;
 pub mod pci;
 pub mod process;
-pub mod serial;
 pub mod syscall;
 
 #[macro_export]

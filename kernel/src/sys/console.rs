@@ -126,6 +126,7 @@ pub fn key_handle(key: char) {
             key
         };
         stdin.push(key);
+
         if is_echo_enabled() {
             match key {
                 ETX_KEY => print_fmt(format_args!("^C")),
@@ -196,7 +197,9 @@ pub fn read_line() -> String {
 pub fn print_fmt(args: fmt::Arguments) {
     if cfg!(feature = "video") {
         sys::framebuffer::print_fmt(args);
-    } else {
-        sys::serial::print_fmt(args);
+    }
+    
+    if cfg!(feature = "serial") {
+        sys::drivers::serial::print_fmt(args);
     }
 }

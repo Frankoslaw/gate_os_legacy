@@ -56,7 +56,7 @@ impl Perform for Serial {
                 // Enable
                 for param in params.iter() {
                     match param[0] {
-                        //12 => sys::console::enable_echo(),
+                        12 => sys::console::enable_echo(),
                         _ => return,
                     }
                 }
@@ -65,7 +65,7 @@ impl Perform for Serial {
                 // Disable
                 for param in params.iter() {
                     match param[0] {
-                        //12 => sys::console::disable_echo(),
+                        12 => sys::console::disable_echo(),
                         _ => return,
                     }
                 }
@@ -90,6 +90,12 @@ pub fn init() {
     sys::arch::idt::set_irq_handler(4, interrupt_handler);
 }
 
+pub fn init_late() {
+    unsafe {
+        sys::arch::apic::io_apic::register_io_apic_entry(sys::arch::idt::interrupt_index(4), 4);
+    }
+}
+
 fn interrupt_handler() {
     let b = SERIAL.lock().read_byte();
     if b == 0xFF {
@@ -101,5 +107,7 @@ fn interrupt_handler() {
         '\x7F' => '\x08', // Delete => Backspace
         c => c,
     };
+
+    // TODO: Fix: no echo in serial, potential culprit could be broken PIT timer which causes echo to be disabled while reading indefinetly
     sys::console::key_handle(c);
 }

@@ -77,13 +77,16 @@ pub fn alloc_pages(mapper: &mut OffsetPageTable, addr: u64, size: usize) -> Resu
     for page in pages {
         //debug!("Alloc page {:?}", page);
         if let Some(frame) = frame_allocator.allocate_frame() {
-            //debug!("Alloc frame {:?}", frame);
+            log::info!("Alloc frame {:?}", frame);
+
             unsafe {
                 if let Ok(mapping) = mapper.map_to(page, frame, flags, &mut frame_allocator) {
-                    //debug!("Mapped {:?} to {:?}", page, frame);
+                    log::debug!("Mapped {:?} to {:?}", page, frame);
                     mapping.flush();
                 } else {
                     log::debug!("Could not map {:?} to {:?}", page, frame);
+                    log::debug!("{:#?}", mapper.map_to(page, frame, flags, &mut frame_allocator));
+
                     return Err(());
                 }
             }
