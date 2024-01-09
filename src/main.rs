@@ -2,6 +2,7 @@ fn main() {
     // choose whether to start the UEFI or BIOS image
     let uefi = true;
     let serial_only = true;
+    let gdb_enabled = true;
 
     let mut cmd = std::process::Command::new("qemu-system-x86_64");
 
@@ -12,6 +13,12 @@ fn main() {
         cmd
             .arg("-serial")
             .arg("stdio");
+    }
+
+    if gdb_enabled {
+        cmd
+            .arg("-s")
+            .arg("-S");
     }
 
     cmd

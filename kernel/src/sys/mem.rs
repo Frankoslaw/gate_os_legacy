@@ -57,47 +57,21 @@ pub fn virt_to_phys(addr: VirtAddr) -> Option<PhysAddr> {
     mapper().translate_addr(addr)
 }
 
-pub fn identity_map(physical_address: u64, flags: Option<PageTableFlags>) {
-    let flags = flags.unwrap_or_else(|| {
-        PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE
-    });
+pub fn identity_map(physical_address: u64) {
+    let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE;
+
     let physical_address = PhysAddr::new(physical_address);
     let physical_frame: PhysFrame = PhysFrame::containing_address(physical_address);
+    
     unsafe {
         mapper()
             .identity_map(
                 physical_frame,
                 flags,
-                &mut BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()),
+                &mut frame_allocator(),
             )
             .expect("Failed to identity map")
             .flush();
-    }
-}
-
-pub fn range_map(start: VirtAddr, size: u64, flags: Option<PageTableFlags>) {
-    let end = start + size - 1u64;
-    let heap_start_page = Page::containing_address(start);
-    let heap_end_page = Page::containing_address(end);
-    let page_range = Page::range_inclusive(heap_start_page, heap_end_page);
-    for page in page_range {
-        let frame = unsafe { BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()) }
-            .allocate_frame()
-            .expect("Failed to allocate for range map");
-        let flags = flags.unwrap_or_else(|| {
-            PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE
-        });
-        unsafe {
-            mapper()
-                .map_to(
-                    page,
-                    frame,
-                    flags,
-                    &mut BootInfoFrameAllocator::init(MEMORY_MAP.unwrap()),
-                )
-                .expect("Failed to map range")
-                .flush();
-        }
     }
 }
 

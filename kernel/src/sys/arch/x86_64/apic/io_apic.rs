@@ -8,7 +8,7 @@ pub const IO_APIC_OFFSET: u8 = 100;
 pub static IO_APIC: OnceCell<Spinlock<IoApic>> = OnceCell::uninit();
 
 pub unsafe fn init_io_apic(io_apic_address: u64) {
-    mem::identity_map(io_apic_address, None);
+    mem::identity_map(io_apic_address);
 
     let mut io_apic = IoApic::new(io_apic_address);
     io_apic.init(IO_APIC_OFFSET);

@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "Attach to QEMU",
+        "type": "lldb",
+        "request": "custom",
+        "sourceLanguages": ["rust"],
+        "targetCreateCommands": [
+            "target create  {{KERNEL_PATH}}",
+            "target modules load --file {{KERNEL_PATH}} --slide 0x8000000000",
+            "settings set target.inherit-env false"
+        ],
+        "processCreateCommands": [
+            "gdb-remote localhost:1234"
+        ]
+    }
+]
+}

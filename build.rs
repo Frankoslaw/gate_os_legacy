@@ -1,4 +1,8 @@
-use std::{path::PathBuf, fs::{self, File}, process::Command};
+extern crate handlebars;
+
+use std::{path::PathBuf, fs::{self, File}, process::Command, collections::HashMap};
+use handlebars::Handlebars;
+
 
 fn main() {
     // set by cargo, build scripts should use this directory for output files
@@ -25,6 +29,11 @@ fn main() {
             format!("./target/x86_64-unknown-none/release/{}", executable_name), 
             format!("./kernel/dsk/bin/{}", executable_name)
         ).unwrap();
+
+        Command::new("strip")
+            .arg(format!("./kernel/dsk/bin/{}", executable_name))
+            .status()
+            .unwrap();
     }
 
 
@@ -50,5 +59,22 @@ fn main() {
             .unwrap();
 
         println!("cargo:rustc-env=BIOS_PATH={}", bios_path.display());
+    }
+
+    let lldb_emit = true;
+
+    if lldb_emit {
+        let mut handlebars = Handlebars::new();
+        handlebars
+            .register_template_string("launch", include_str!("templates/launch.hbs"))
+            .unwrap();
+
+        let mut data = HashMap::new();
+        data.insert("KERNEL_PATH", kernel.to_str().unwrap());
+
+        let content = handlebars.render("launch", &data).unwrap();
+
+        fs::write(".vscode/launch.json", content).expect("unable to create debug file");
+        println!("debug file is ready, run `lldb -s debug.lldb` to start debugging");
     }
 }

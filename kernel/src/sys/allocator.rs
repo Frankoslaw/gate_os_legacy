@@ -84,8 +84,7 @@ pub fn alloc_pages(mapper: &mut OffsetPageTable, addr: u64, size: usize) -> Resu
                     log::debug!("Mapped {:?} to {:?}", page, frame);
                     mapping.flush();
                 } else {
-                    log::debug!("Could not map {:?} to {:?}", page, frame);
-                    log::debug!("{:#?}", mapper.map_to(page, frame, flags, &mut frame_allocator));
+                    // log::debug!("Could not map {:?} to {:?}", page, frame);
 
                     return Err(());
                 }
@@ -111,7 +110,7 @@ pub fn free_pages(mapper: &mut OffsetPageTable, addr: u64, size: usize) {
         if let Ok((_frame, mapping)) = mapper.unmap(page) {
             mapping.flush();
         } else {
-            //debug!("Could not unmap {:?}", page);
+            log::debug!("Could not unmap {:?}", page);
         }
     }
 }

@@ -13,7 +13,7 @@ impl AcpiHandler for ACPIHandler {
         size: usize,
     ) -> PhysicalMapping<Self, T> {
         let virtual_address = VirtAddr::new(physical_address as u64);
-        mem::identity_map(physical_address as u64, None);
+        mem::identity_map(physical_address as u64);
         PhysicalMapping::new(
             physical_address,
             NonNull::new(virtual_address.as_mut_ptr()).unwrap(),

@@ -40,6 +40,9 @@
 
             pkg-config
             clippy
+
+            gdb
+            lldb
           ];
 
           RUST_SRC_PATH = "${pkgs.rust-bin.nightly.latest.default.override {

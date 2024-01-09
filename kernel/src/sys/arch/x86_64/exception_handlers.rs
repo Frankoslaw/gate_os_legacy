@@ -1,6 +1,11 @@
-use crate::sys::hlt_loop;
+use crate::api;
+use crate::sys::{hlt_loop, self};
+use api::process::ExitCode;
+
+use x86_64::VirtAddr;
 use x86_64::registers::control::Cr2;
 use x86_64::structures::idt::{InterruptStackFrame, PageFaultErrorCode};
+use x86_64::structures::paging::OffsetPageTable;
 
 pub extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     log::error!("EXCEPTION: BREAKPOINT: {stack_frame:#?}");
@@ -35,14 +40,25 @@ pub extern "x86-interrupt" fn segment_not_present_handler(
 }
 
 pub extern "x86-interrupt" fn page_fault_handler(
-    stack_frame: InterruptStackFrame,
+    _stack_frame: InterruptStackFrame,
     error_code: PageFaultErrorCode,
 ) {
-    log::error!("EXCEPTION: PAGE FAULT");
-    log::error!("Accessed Address: {:?}", Cr2::read());
-    log::error!("Error Code: {error_code:?}");
-    log::error!("{stack_frame:#?}");
-    hlt_loop();
+    log::error!("EXCEPTION: PAGE FAULT ({:?})", error_code);
+    let addr = Cr2::read().as_u64();
+
+    let page_table = unsafe { sys::process::page_table() };
+    let phys_mem_offset = unsafe { sys::mem::PHYS_MEM_OFFSET.unwrap() };
+    let mut mapper = unsafe { OffsetPageTable::new(page_table, VirtAddr::new(phys_mem_offset)) };
+
+    if sys::allocator::alloc_pages(&mut mapper, addr, 1).is_err() {
+        log::error!("Could not allocate address");
+
+        if error_code.contains(PageFaultErrorCode::USER_MODE) {
+            api::syscall::exit(ExitCode::PageFaultError);
+        } else {
+            hlt_loop();
+        }
+    }
 }
 
 pub extern "x86-interrupt" fn double_fault_handler(

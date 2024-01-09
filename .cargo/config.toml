@@ -1,2 +1,13 @@
 [unstable]
 bindeps = true
+
+[profile.dev]
+opt-level = 0 
+debug = true 
+rustflags = [
+    "-g"
+]
+
+[profile.release]
+opt-level = 3
+debug = false

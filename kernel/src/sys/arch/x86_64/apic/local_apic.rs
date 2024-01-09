@@ -5,7 +5,7 @@ use crate::sys::arch::x86_64::idt;
 use crate::sys::mem;
 
 pub fn init_local_apic(local_apic_address: u64) -> LocalApic {
-    mem::identity_map(local_apic_address, None);
+    mem::identity_map(local_apic_address);
     let mut local_apic = LocalApicBuilder::new()
         //https://wiki.osdev.org/APIC_timer
         .timer_vector(idt::interrupt_index(0) as usize)
