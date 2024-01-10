@@ -39,6 +39,7 @@
             cz-cli
 
             cargo-make
+            cargo-deny
             pkg-config
             clippy
 
