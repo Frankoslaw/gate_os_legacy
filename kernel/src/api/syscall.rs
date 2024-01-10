@@ -80,9 +80,7 @@ pub fn spawn(path: &str, args: &[&str]) -> Result<(), ExitCode> {
 }
 
 pub fn alloc(size: usize, align: usize) -> *mut u8 {
-    unsafe {
-        syscall!(ALLOC, size, align) as *mut u8
-    }
+    unsafe { syscall!(ALLOC, size, align) as *mut u8 }
 }
 
 pub fn free(ptr: *mut u8, size: usize, align: usize) {

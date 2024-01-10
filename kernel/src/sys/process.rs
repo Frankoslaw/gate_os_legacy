@@ -1,6 +1,6 @@
 use crate::api::process::ExitCode;
-use crate::sys::fs::{Resource, Device};
 use crate::sys::console::Console;
+use crate::sys::fs::{Device, Resource};
 
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
@@ -16,7 +16,6 @@ use spin::RwLock;
 use x86_64::registers::control::Cr3;
 use x86_64::structures::idt::InterruptStackFrameValue;
 use x86_64::structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame};
-
 
 const MAX_HANDLES: usize = 64;
 const MAX_PROCS: usize = 4;
@@ -325,7 +324,8 @@ impl Process {
                 entry_point_addr = obj.entry();
                 log::debug!("entry_point_addr: {}", entry_point_addr);
 
-                sys::allocator::alloc_pages(&mut mapper, code_addr + entry_point_addr, code_size).expect("proc mem alloc");
+                sys::allocator::alloc_pages(&mut mapper, code_addr + entry_point_addr, code_size)
+                    .expect("proc mem alloc");
 
                 for segment in obj.segments() {
                     let addr = segment.address() as usize;

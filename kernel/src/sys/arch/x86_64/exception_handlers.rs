@@ -1,11 +1,11 @@
 use crate::api;
-use crate::sys::{hlt_loop, self};
+use crate::sys::{self, hlt_loop};
 use api::process::ExitCode;
 
-use x86_64::VirtAddr;
 use x86_64::registers::control::Cr2;
 use x86_64::structures::idt::{InterruptStackFrame, PageFaultErrorCode};
 use x86_64::structures::paging::OffsetPageTable;
+use x86_64::VirtAddr;
 
 pub extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     log::error!("EXCEPTION: BREAKPOINT: {stack_frame:#?}");

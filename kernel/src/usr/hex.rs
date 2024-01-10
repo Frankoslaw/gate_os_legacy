@@ -1,5 +1,5 @@
-use crate::api::fs;
 use crate::api::console::Style;
+use crate::api::fs;
 use crate::api::process::ExitCode;
 
 use alloc::format;
@@ -17,7 +17,8 @@ pub fn main(args: &[&str]) -> Result<(), ExitCode> {
         return Ok(());
     }
     let pathname = args[1];
-    if let Ok(buf) = fs::read_to_bytes(pathname) { // TODO: read chunks
+    if let Ok(buf) = fs::read_to_bytes(pathname) {
+        // TODO: read chunks
         print_hex(&buf);
         Ok(())
     } else {
@@ -39,19 +40,27 @@ pub fn print_hex_at(buf: &[u8], offset: usize) {
     for (index, chunk) in buf.chunks(16).enumerate() {
         let addr = offset + index * 16;
 
-        let hex = chunk.chunks(2).map(|pair|
-            pair.iter().map(|byte|
-                format!("{:02X}", byte)
-            ).collect::<Vec<String>>().join("")
-        ).collect::<Vec<String>>().join(" ");
+        let hex = chunk
+            .chunks(2)
+            .map(|pair| {
+                pair.iter()
+                    .map(|byte| format!("{:02X}", byte))
+                    .collect::<Vec<String>>()
+                    .join("")
+            })
+            .collect::<Vec<String>>()
+            .join(" ");
 
-        let ascii: String = chunk.iter().map(|byte|
-            if *byte >= 32 && *byte <= 126 {
-                *byte as char
-            } else {
-                '.'
-            }
-        ).collect();
+        let ascii: String = chunk
+            .iter()
+            .map(|byte| {
+                if *byte >= 32 && *byte <= 126 {
+                    *byte as char
+                } else {
+                    '.'
+                }
+            })
+            .collect();
 
         println!("{}{:08X}: {}{:40}{}{}", cyan, addr, pink, hex, reset, ascii);
     }
@@ -61,5 +70,8 @@ fn help() {
     let csi_option = Style::color("LightCyan");
     let csi_title = Style::color("Yellow");
     let csi_reset = Style::reset();
-    println!("{}Usage:{} hex {}<file>{}", csi_title, csi_reset, csi_option, csi_reset);
+    println!(
+        "{}Usage:{} hex {}<file>{}",
+        csi_title, csi_reset, csi_option, csi_reset
+    );
 }

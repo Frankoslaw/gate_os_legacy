@@ -1,9 +1,9 @@
-use crate::{api, sys, usr};
 use crate::api::console;
 use crate::api::console::Style;
 use crate::api::fs;
-use crate::api::syscall;
 use crate::api::process::ExitCode;
+use crate::api::syscall;
+use crate::{api, sys, usr};
 
 use core::convert::TryInto;
 
@@ -24,7 +24,6 @@ pub fn main(args: &[&str]) -> Result<(), ExitCode> {
         path = path.trim_end_matches('/');
     }
 
-   
     if let Some(info) = syscall::info(path) {
         if info.is_file() {
             if let Ok(contents) = api::fs::read_to_string(path) {
@@ -90,7 +89,10 @@ fn help() {
     let csi_option = Style::color("LightCyan");
     let csi_title = Style::color("Yellow");
     let csi_reset = Style::reset();
-    println!("{}Usage:{} read {}<path>{}", csi_title, csi_reset, csi_option, csi_reset);
+    println!(
+        "{}Usage:{} read {}<path>{}",
+        csi_title, csi_reset, csi_option, csi_reset
+    );
     println!();
     println!("{}Paths:{}", csi_title, csi_reset);
     println!("  {0}<dir>/{1}     Read directory", csi_option, csi_reset);

@@ -198,7 +198,7 @@ pub fn print_fmt(args: fmt::Arguments) {
     if cfg!(feature = "video") {
         sys::framebuffer::print_fmt(args);
     }
-    
+
     if cfg!(feature = "serial") {
         sys::drivers::serial::print_fmt(args);
     }

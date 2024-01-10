@@ -2,9 +2,9 @@ use crate::api::console::Style;
 use crate::api::fs;
 use crate::api::prompt::Prompt;
 use crate::api::syscall;
+use crate::sys::fs::FileType;
 use crate::{api, sys, usr};
 use api::process::ExitCode;
-use crate::sys::fs::FileType;
 
 use alloc::format;
 use alloc::string::String;
@@ -36,19 +36,19 @@ pub fn exec(cmd: &str) -> Result<(), ExitCode> {
 
     let res = match args[0] {
         "" => Ok(()),
-        "disk"     => usr::disk::main(&args),
-        "elf"      => usr::elf::main(&args),
+        "disk" => usr::disk::main(&args),
+        "elf" => usr::elf::main(&args),
         "hello" => {
             println!("Hello world!");
             Ok(())
-        },
-        "hex"      => usr::hex::main(&args),
-        "install"  => usr::install::main(&args),
-        "list"     => usr::list::main(&args),
-        "read"     => usr::read::main(&args),
-        "quit"     => Err(ExitCode::ShellExit),
+        }
+        "hex" => usr::hex::main(&args),
+        "install" => usr::install::main(&args),
+        "list" => usr::list::main(&args),
+        "read" => usr::read::main(&args),
+        "quit" => Err(ExitCode::ShellExit),
         "panic" => panic!("{}", args[1..].join(" ")),
-        _          => {
+        _ => {
             let mut path = fs::realpath(args[0]);
             if path.len() > 1 {
                 path = path.trim_end_matches('/').into();
@@ -58,9 +58,7 @@ pub fn exec(cmd: &str) -> Result<(), ExitCode> {
                     sys::process::set_dir(&path);
                     Ok(())
                 }
-                Some(FileType::File) => {
-                    spawn(&path, &args)
-                }
+                Some(FileType::File) => spawn(&path, &args),
                 _ => {
                     let path = format!("/bin/{}", args[0]);
                     spawn(&path, &args)

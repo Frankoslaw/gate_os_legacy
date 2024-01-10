@@ -7,7 +7,7 @@ use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
 
-pub use crate::sys::fs::{FileInfo, DeviceType};
+pub use crate::sys::fs::{DeviceType, FileInfo};
 
 #[derive(Clone, Copy)]
 pub enum IO {

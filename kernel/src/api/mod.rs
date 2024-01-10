@@ -1,3 +1,4 @@
+pub mod allocator;
 pub mod clock;
 pub mod console;
 pub mod fs;
@@ -5,10 +6,9 @@ pub mod io;
 pub mod process;
 pub mod prompt;
 pub mod syscall;
-pub mod vga;
-pub mod unit;
 pub mod time;
-pub mod allocator;
+pub mod unit;
+pub mod vga;
 
 #[cfg(not(test))]
 #[macro_export]

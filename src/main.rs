@@ -1,28 +1,36 @@
 fn main() {
     // choose whether to start the UEFI or BIOS image
-    let uefi = true;
-    let serial_only = true;
-    let gdb_enabled = true;
-
+    let uefi = std::env::var("UEFI_ENABLED")
+        .unwrap()
+        .parse()
+        .unwrap_or(false);
     let mut cmd = std::process::Command::new("qemu-system-x86_64");
 
-    if serial_only || cfg!(test){
-        cmd
-            .arg("-display")
-            .arg("none");
-        cmd
-            .arg("-serial")
-            .arg("stdio");
+    if !std::env::var("MONITOR_ENABLED")
+        .unwrap()
+        .parse()
+        .unwrap_or(false)
+    {
+        cmd.arg("-display").arg("none");
     }
 
-    if gdb_enabled {
-        cmd
-            .arg("-s")
-            .arg("-S");
+    if std::env::var("SERIAL_ENABLED")
+        .unwrap()
+        .parse()
+        .unwrap_or(false)
+    {
+        cmd.arg("-serial").arg("stdio");
     }
 
-    cmd
-        .arg("-drive")
+    if std::env::var("LLDB_ENABLED")
+        .unwrap()
+        .parse()
+        .unwrap_or(false)
+    {
+        cmd.arg("-s").arg("-S");
+    }
+
+    cmd.arg("-drive")
         .arg(format!("format=qcow2,file=example.img"));
 
     if uefi {

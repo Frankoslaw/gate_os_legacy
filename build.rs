@@ -1,8 +1,7 @@
 extern crate handlebars;
 
-use std::{path::PathBuf, fs::{self, File}, process::Command, collections::HashMap};
 use handlebars::Handlebars;
-
+use std::{collections::HashMap, fs, path::PathBuf};
 
 fn main() {
     // set by cargo, build scripts should use this directory for output files
@@ -11,35 +10,15 @@ fn main() {
     // https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#artifact-dependencies
     let kernel = PathBuf::from(std::env::var_os("CARGO_BIN_FILE_KERNEL_kernel").unwrap());
 
-
-    // rust userspace binaries
-    for path in fs::read_dir("./kernel/src/bin/").unwrap() {
-        let rust_source_path = path.unwrap().path();
-        let executable_name = rust_source_path.file_stem().unwrap().to_str().unwrap();
-
-        File::create(format!("./kernel/dsk/bin/{}", executable_name)).unwrap();
-        Command::new("cargo")
-            .current_dir("./kernel")
-            .arg("rustc")
-            .args(&["--no-default-features", "--features", "userspace", "--release", "--bin", executable_name])
-            .status()
-            .unwrap();
-
-        fs::copy(
-            format!("./target/x86_64-unknown-none/release/{}", executable_name), 
-            format!("./kernel/dsk/bin/{}", executable_name)
-        ).unwrap();
-
-        Command::new("strip")
-            .arg(format!("./kernel/dsk/bin/{}", executable_name))
-            .status()
-            .unwrap();
-    }
-
-
-    let uefi = true;
+    let uefi = std::env::var("UEFI_ENABLED")
+        .unwrap()
+        .parse()
+        .unwrap_or(false);
     let mut boot_config = bootloader::BootConfig::default();
-    boot_config.serial_logging = false;
+    boot_config.serial_logging = std::env::var("BOOTLOADER_SERIAL_LOGGING")
+        .unwrap()
+        .parse()
+        .unwrap_or(false);
 
     if uefi {
         // create an UEFI disk image (optional)
@@ -61,7 +40,10 @@ fn main() {
         println!("cargo:rustc-env=BIOS_PATH={}", bios_path.display());
     }
 
-    let lldb_emit = true;
+    let lldb_emit = std::env::var("LLDB_ENABLED")
+        .unwrap()
+        .parse()
+        .unwrap_or(false);
 
     if lldb_emit {
         let mut handlebars = Handlebars::new();

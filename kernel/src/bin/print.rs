@@ -1,8 +1,8 @@
 #![no_std]
 #![no_main]
 
-use kernel::entry_point;
 use kernel::api::syscall;
+use kernel::entry_point;
 
 entry_point!(main);
 

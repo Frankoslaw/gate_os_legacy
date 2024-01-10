@@ -62,14 +62,10 @@ pub fn identity_map(physical_address: u64) {
 
     let physical_address = PhysAddr::new(physical_address);
     let physical_frame: PhysFrame = PhysFrame::containing_address(physical_address);
-    
+
     unsafe {
         mapper()
-            .identity_map(
-                physical_frame,
-                flags,
-                &mut frame_allocator(),
-            )
+            .identity_map(physical_frame, flags, &mut frame_allocator())
             .expect("Failed to identity map")
             .flush();
     }

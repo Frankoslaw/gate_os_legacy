@@ -38,6 +38,7 @@
             gitleaks
             cz-cli
 
+            cargo-make
             pkg-config
             clippy
 

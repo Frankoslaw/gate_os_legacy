@@ -1,14 +1,13 @@
-use crate::{api, sys, usr};
 use crate::api::console::Style;
 use crate::api::fs;
 use crate::api::fs::DeviceType;
 use crate::api::io;
 use crate::api::process::ExitCode;
 use crate::api::syscall;
+use crate::{api, sys, usr};
 
 use alloc::format;
 use alloc::string::String;
-
 
 pub fn copy_files(verbose: bool) {
     create_dir("/bin", verbose); // Binaries
@@ -30,29 +29,53 @@ pub fn copy_files(verbose: bool) {
     // create_dev("/dev/random", DeviceType::Random, verbose);
     create_dev("/dev/console", DeviceType::Console, verbose);
 
-    copy_file("/ini/boot.sh", include_bytes!("../../dsk/ini/boot.sh"), verbose);
-    copy_file("/ini/shell.sh", include_bytes!("../../dsk/ini/shell.sh"), verbose);
-    copy_file("/ini/version.txt", include_bytes!("../../dsk/ini/version.txt"), verbose);
+    copy_file(
+        "/ini/boot.sh",
+        include_bytes!("../../dsk/ini/boot.sh"),
+        verbose,
+    );
+    copy_file(
+        "/ini/shell.sh",
+        include_bytes!("../../dsk/ini/shell.sh"),
+        verbose,
+    );
+    copy_file(
+        "/ini/version.txt",
+        include_bytes!("../../dsk/ini/version.txt"),
+        verbose,
+    );
 
     create_dir("/ini/palettes", verbose);
-    copy_file("/ini/palettes/gruvbox-dark.csv", include_bytes!("../../dsk/ini/palettes/gruvbox-dark.csv"), verbose);
+    copy_file(
+        "/ini/palettes/gruvbox-dark.csv",
+        include_bytes!("../../dsk/ini/palettes/gruvbox-dark.csv"),
+        verbose,
+    );
 
     create_dir("/ini/fonts", verbose);
-    copy_file("/ini/fonts/zap-light-8x16.psf", include_bytes!("../../dsk/ini/fonts/zap-light-8x16.psf"), verbose);
-
+    copy_file(
+        "/ini/fonts/zap-light-8x16.psf",
+        include_bytes!("../../dsk/ini/fonts/zap-light-8x16.psf"),
+        verbose,
+    );
 }
 
 pub fn main(args: &[&str]) -> Result<(), ExitCode> {
     let csi_color = Style::color("Yellow");
     let csi_reset = Style::reset();
-    println!("{}Welcome to GATE OS v{} installation program!{}", csi_color, env!("CARGO_PKG_VERSION"), csi_reset);
+    println!(
+        "{}Welcome to GATE OS v{} installation program!{}",
+        csi_color,
+        env!("CARGO_PKG_VERSION"),
+        csi_reset
+    );
     println!();
 
     let mut has_confirmed = false;
     for &arg in args {
         match arg {
             "-y" | "--yes" => has_confirmed = true,
-            _ => continue
+            _ => continue,
         }
     }
     if !has_confirmed {

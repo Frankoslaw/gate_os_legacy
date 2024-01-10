@@ -28,7 +28,13 @@ impl log::Log for LockedLogger {
         };
         let csi_reset = Style::reset();
 
-        printk!("{}[{:5}]{}: {}\r\n", csi_color, record.level(), csi_reset, record.args());
+        printk!(
+            "{}[{:5}]{}: {}\r\n",
+            csi_color,
+            record.level(),
+            csi_reset,
+            record.args()
+        );
     }
 
     fn flush(&self) {}
@@ -38,8 +44,7 @@ impl log::Log for LockedLogger {
 const LOG_LEVEL: LevelFilter = LevelFilter::Trace;
 
 pub fn init() {
-    let logger = LOGGER
-        .get_or_init(|| LockedLogger::new());
+    let logger = LOGGER.get_or_init(|| LockedLogger::new());
     log::set_logger(logger).expect("logger already set");
     log::set_max_level(LOG_LEVEL);
 }

@@ -17,7 +17,6 @@ pub mod usr;
 
 use bootloader_api::BootInfo;
 
-
 const KERNEL_SIZE: usize = 2 << 20; // 2 MB
 
 pub fn init(boot_info: &'static mut BootInfo) {
