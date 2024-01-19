@@ -1,0 +1,77 @@
+[package]
+name = "kernel"
+version = "0.2.1"
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["video", "serial"]
+video = []
+serial = []
+userspace = []
+
+[dependencies]
+bootloader_api = "0.11.4"
+
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+libm = "0.2.8"
+# TODO: Remove spinning top and replace with spin
+spinning_top = "0.3.0"
+spin = "0.9.8"
+usize_conversions = "0.2.0"
+volatile = "0.5.1"
+derive-new = {version = "0.6.0", default-features = false}
+bit_field = "0.10.2"
+vte = "0.13.0"
+time = { version = "0.2.27", default-features = false }
+object = { version = "0.32.2", default-features = false, features = ["read"] }
+
+pc-keyboard = "0.7.0"
+ps2-mouse = "0.1.4"
+log = "0.4.20"
+
+linked_list_allocator = "0.10.5"
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+acpi = "4.1.1"
+x2apic = "0.4"
+pic8259 = "0.10.2"
+x86 = "0.52.0"
+x86_64 = "0.14.11"
+xmas-elf = "0.9.1"
+raw-cpuid = "11.0.1"
+uart_16550 = "0.3.0"
+
+[dependencies.noto-sans-mono-bitmap]
+version = "0.2.0"
+default-features = false
+features = [
+    "regular",
+    "size_16",
+    "unicode-basic-latin",
+    # required for the fallback char '�'
+    "unicode-specials",
+]
+
+[dependencies.crossbeam-queue]
+version = "0.3.10"
+default-features = false
+features = ["alloc"]
+
+[dependencies.conquer-once]
+version = "0.4.0"
+default-features = false
+
+[dependencies.futures-util]
+version = "0.3.30"
+default-features = false
+features = ["alloc"]
+
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

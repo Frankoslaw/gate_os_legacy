@@ -2,3 +2,8 @@
 .direnv
 example.img
 .vscode/launch.json
+
+/limine
+/ovmf
+*.iso
+*.hdd

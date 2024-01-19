@@ -1,44 +1,48 @@
 #![no_std]
 #![no_main]
 
-extern crate alloc;
+use core::arch::asm;
 
-#[allow(unused_imports)]
-use core::panic::PanicInfo;
+static FRAMEBUFFER_REQUEST: limine::FramebufferRequest = limine::FramebufferRequest::new(0);
+static BASE_REVISION: limine::BaseRevision = limine::BaseRevision::new(1);
 
-use bootloader_api::config::{BootloaderConfig, Mapping};
-use bootloader_api::{entry_point, BootInfo};
-use kernel::{print, println, sys, usr};
 
-pub static BOOTLOADER_CONFIG: BootloaderConfig = {
-    let mut config = BootloaderConfig::new_default();
-    config.mappings.physical_memory = Some(Mapping::Dynamic);
-    config
-};
+#[no_mangle]
+unsafe extern "C" fn _start() -> ! {
+    assert!(BASE_REVISION.is_supported());
 
-entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
-fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
-    kernel::init(boot_info);
-    print!("\x1b[?25h");
+    if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response().get() {
+        if framebuffer_response.framebuffer_count < 1 {
+            hcf();
+        }
 
-    loop {
-        user_boot();
-    }
-}
+        let framebuffer = &framebuffer_response.framebuffers()[0];
 
-fn user_boot() {
-    if !sys::fs::is_mounted() {
-        println!("MFS is not mounted to '/'");
+        for i in 0..100_usize {
+            let pixel_offset = i * framebuffer.pitch as usize + i * 4;
+
+            
+            unsafe {
+                *(framebuffer.address.as_ptr().unwrap().add(pixel_offset) as *mut u32) = 0xFFFFFFFF;
+            }
+        }
     }
 
-    usr::shell::main().ok();
+    hcf();
 }
 
 #[cfg(not(test))]
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    log::error!("{}", info);
+fn rust_panic(_info: &core::panic::PanicInfo) -> ! {
+    hcf();
+}
 
-    loop {}
+fn hcf() -> ! {
+    unsafe {
+        asm!("cli");
+        loop {
+            asm!("hlt");
+        }
+    }
 }

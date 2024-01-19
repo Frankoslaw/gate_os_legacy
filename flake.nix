@@ -45,6 +45,11 @@
 
             gdb
             lldb
+            gnumake
+
+            xorriso
+            gptfdisk
+            mtools
           ];
 
           RUST_SRC_PATH = "${pkgs.rust-bin.nightly.latest.default.override {
