@@ -1,4 +1,5 @@
 /target
+*/**/target
 .direnv
 example.img
 .vscode/launch.json
