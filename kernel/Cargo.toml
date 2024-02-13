@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 limine = "0.1.12"
+hal-core = { path = "../hal-core", features = ["embedded-graphics-core"] }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+hal-x86_64 = { path = "../hal-x86_64", default-features = false }
