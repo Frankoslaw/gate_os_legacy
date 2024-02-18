@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-limine = "0.1.12"
-hal-core = { path = "../hal-core", features = ["embedded-graphics-core"] }
-
-[target.'cfg(target_arch = "x86_64")'.dependencies]
-hal-x86_64 = { path = "../hal-x86_64", default-features = false }
+embedded-graphics = "0.8.1"
+embedded-graphics-core = "0.4.0"
+embedded-text = { version="0.7.0", features = ["ansi"]}
+limine = "0.2.0"
+noto-sans-mono-bitmap = "0.2.0"
+tinyqoi = "0.2.0"

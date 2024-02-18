@@ -1,1 +1,0 @@
-GATEOS v{x.x.x}

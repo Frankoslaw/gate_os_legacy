@@ -4,6 +4,7 @@
 example.img
 .vscode/launch.json
 
+limine
 /limine
 /ovmf
 *.iso

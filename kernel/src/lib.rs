@@ -1,6 +1,0 @@
-#![cfg_attr(all(target_os = "none", test), no_main)]
-#![cfg_attr(target_os = "none", no_std)]
-#![cfg_attr(target_os = "none", feature(alloc_error_handler))]
-#![feature(panic_info_message)]
-#![allow(unused_unsafe)]
-#![feature(const_mut_refs)]
