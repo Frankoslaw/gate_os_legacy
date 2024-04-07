@@ -1,5 +1,5 @@
 [package]
-name = "limine-rust-template"
+name = "gateos-kernel"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,3 +10,9 @@ embedded-text = { version="0.7.0", features = ["ansi"]}
 limine = "0.2.0"
 noto-sans-mono-bitmap = "0.2.0"
 tinyqoi = "0.2.0"
+
+[profile.dev]
+panic = 'abort'
+
+[profile.release]
+panic = 'abort'

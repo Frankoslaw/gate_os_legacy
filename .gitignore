@@ -6,6 +6,6 @@ example.img
 
 limine
 /limine
-/ovmf
+/ovmf-*
 *.iso
 *.hdd

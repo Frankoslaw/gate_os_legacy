@@ -93,6 +93,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gateos-kernel"
+version = "0.1.0"
+dependencies = [
+ "embedded-graphics",
+ "embedded-graphics-core",
+ "embedded-text",
+ "limine",
+ "noto-sans-mono-bitmap",
+ "tinyqoi",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -148,18 +160,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "846c87e24d089e8717a61098cba72b378e3525c46a87cf75b71352dcf668e68c"
 dependencies = [
  "bitflags",
-]
-
-[[package]]
-name = "limine-rust-template"
-version = "0.1.0"
-dependencies = [
- "embedded-graphics",
- "embedded-graphics-core",
- "embedded-text",
- "limine",
- "noto-sans-mono-bitmap",
- "tinyqoi",
 ]
 
 [[package]]
