@@ -40,9 +40,10 @@ ifeq ($(RUST_PROFILE),dev)
 endif
 
 # Default target.
+#-- -C link-arg=-Tlinker-$(ARCH).ld
 .PHONY: all
 all:
-	cargo rustc --target $(RUST_TARGET) --profile $(RUST_PROFILE) -- -C link-arg=-Tlinker-$(ARCH).ld
+	cargo build --target $(RUST_TARGET) --profile $(RUST_PROFILE) 
 	cp target/$(RUST_TARGET)/$(RUST_PROFILE_SUBDIR)/$$(cd target/$(RUST_TARGET)/$(RUST_PROFILE_SUBDIR) && find -maxdepth 1 -perm -111 -type f) kernel
 
 # Remove object files and the final executable.

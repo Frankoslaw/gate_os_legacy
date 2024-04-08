@@ -1,7 +1,9 @@
 # TODO
 
-- [ ] UART
-- [ ] Terminal using framebuffer
+- [ ] Debugging
+  - [ ] UART
+  - [x] e9 / qemu debugcon
+- [x] Terminal using framebuffer
   - [ ] VT100 support
 - [ ] CPU Exceptions
 - [ ] Allocator
@@ -34,3 +36,11 @@
   - [ ] Coperative
 - [ ] Full RiscV64 support
 - [ ] Rust workspace
+- [ ] Error handling
+  - [ ] Tracing
+    - [x] e9
+    - [ ] UART
+    - [ ] framebuffer
+  - [ ] Panic unwind
+    - https://docs.rs/unwinding/latest/unwinding/
+- [ ] Better framebuffer handling( extreamly unsafe )

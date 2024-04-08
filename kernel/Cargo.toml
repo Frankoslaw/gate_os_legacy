@@ -23,6 +23,9 @@ pic8259 = "0.11.0"
 e9 = { path = "../crates/e9" }
 limine = "0.2.0"
 
+[build-dependencies]
+image = { version = "0.25.1", default-features = false, features = ["png"] }
+
 [profile.dev]
 panic = 'abort'
 

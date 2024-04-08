@@ -45,7 +45,7 @@ run-hdd: run-hdd-$(ARCH)
 run-x86_64: ovmf $(IMAGE_NAME).iso
 	qemu-system-x86_64 \
 		-M q35 \
-		-debugcon /dev/stdout \
+		-debugcon stdio \
 		-m 2G \
 		-bios ovmf-x86_64/OVMF.fd \
 		-cdrom $(IMAGE_NAME).iso \
@@ -55,7 +55,7 @@ run-x86_64: ovmf $(IMAGE_NAME).iso
 run-hdd-x86_64: ovmf $(IMAGE_NAME).hdd
 	qemu-system-x86_64 \
 		-M q35 \
-		-debugcon /dev/stdout \
+		-debugcon stdio \
 		-m 2G \
 		-bios ovmf-x86_64/OVMF.fd \
 		-hda $(IMAGE_NAME).hdd
