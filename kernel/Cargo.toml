@@ -4,12 +4,24 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+libm = "0.2.8"
+spin = "0.9.8"
+
+pc-keyboard = "0.7.0"
+ps2-mouse = "0.1.4"
+
 embedded-graphics = "0.8.1"
 embedded-graphics-core = "0.4.0"
 embedded-text = { version="0.7.0", features = ["ansi"]}
-limine = "0.2.0"
-noto-sans-mono-bitmap = "0.2.0"
+noto-sans-mono-bitmap = "0.3.0"
 tinyqoi = "0.2.0"
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+x86_64 = "0.15.1"
+pic8259 = "0.11.0"
+e9 = { path = "../crates/e9" }
+limine = "0.2.0"
 
 [profile.dev]
 panic = 'abort'

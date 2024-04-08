@@ -43,35 +43,90 @@ run-hdd: run-hdd-$(ARCH)
 
 .PHONY: run-x86_64
 run-x86_64: ovmf $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf-x86_64/OVMF.fd -cdrom $(IMAGE_NAME).iso -boot d
+	qemu-system-x86_64 \
+		-M q35 \
+		-debugcon /dev/stdout \
+		-m 2G \
+		-bios ovmf-x86_64/OVMF.fd \
+		-cdrom $(IMAGE_NAME).iso \
+		-boot d
 
 .PHONY: run-hdd-x86_64
 run-hdd-x86_64: ovmf $(IMAGE_NAME).hdd
-	qemu-system-x86_64 -M q35 -m 2G -bios ovmf-x86_64/OVMF.fd -hda $(IMAGE_NAME).hdd
+	qemu-system-x86_64 \
+		-M q35 \
+		-debugcon /dev/stdout \
+		-m 2G \
+		-bios ovmf-x86_64/OVMF.fd \
+		-hda $(IMAGE_NAME).hdd
 
 .PHONY: run-aarch64
 run-aarch64: ovmf $(IMAGE_NAME).iso
-	qemu-system-aarch64 -M virt -cpu cortex-a72 -device ramfb -device qemu-xhci -device usb-kbd -m 2G -bios ovmf-aarch64/OVMF.fd -cdrom $(IMAGE_NAME).iso -boot d
+	qemu-system-aarch64 \
+		-M virt \
+		-cpu cortex-a72 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-m 2G \
+		-bios ovmf-aarch64/OVMF.fd \
+		-cdrom $(IMAGE_NAME).iso \
+		-boot d
 
 .PHONY: run-hdd-aarch64
 run-hdd-aarch64: ovmf $(IMAGE_NAME).hdd
-	qemu-system-aarch64 -M virt -cpu cortex-a72 -device ramfb -device qemu-xhci -device usb-kbd -m 2G -bios ovmf-aarch64/OVMF.fd -hda $(IMAGE_NAME).hdd
+	qemu-system-aarch64 \
+		-M virt \
+		-cpu cortex-a72 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-m 2G \
+		-bios ovmf-aarch64/OVMF.fd \
+		-hda $(IMAGE_NAME).hdd
 
 .PHONY: run-riscv64
 run-riscv64: ovmf $(IMAGE_NAME).iso
-	qemu-system-riscv64 -M virt -cpu rv64 -device ramfb -device qemu-xhci -device usb-kbd -m 2G -drive if=pflash,unit=0,format=raw,file=ovmf-riscv64/OVMF.fd -device virtio-scsi-pci,id=scsi -device scsi-cd,drive=cd0 -drive id=cd0,format=raw,file=$(IMAGE_NAME).iso
+	qemu-system-riscv64 \
+		-M virt \
+		-cpu rv64 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-m 2G \
+		-drive if=pflash,unit=0,format=raw,file=ovmf-riscv64/OVMF.fd \
+		-device virtio-scsi-pci,id=scsi \
+		-device scsi-cd,drive=cd0 \
+		-drive id=cd0,format=raw,file=$(IMAGE_NAME).iso
 
 .PHONY: run-hdd-riscv64
 run-hdd-riscv64: ovmf $(IMAGE_NAME).hdd
-	qemu-system-riscv64 -M virt -cpu rv64 -device ramfb -device qemu-xhci -device usb-kbd -m 2G -drive if=pflash,unit=0,format=raw,file=ovmf-riscv64/OVMF.fd -device virtio-scsi-pci,id=scsi -device scsi-hd,drive=hd0 -drive id=hd0,format=raw,file=$(IMAGE_NAME).hdd
+	qemu-system-riscv64 \
+		-M virt \
+		-cpu rv64 \
+		-device ramfb \
+		-device qemu-xhci \
+		-device usb-kbd \
+		-m 2G \
+		-drive if=pflash,unit=0,format=raw,file=ovmf-riscv64/OVMF.fd \
+		-device virtio-scsi-pci,id=scsi \
+		-device scsi-hd,drive=hd0 \
+		-drive id=hd0,format=raw,file=$(IMAGE_NAME).hdd
 
 .PHONY: run-bios
 run-bios: $(IMAGE_NAME).iso
-	qemu-system-x86_64 -M q35 -m 2G -cdrom $(IMAGE_NAME).iso -boot d
+	qemu-system-x86_64 \
+		-M q35 \
+		-m 2G \
+		-cdrom $(IMAGE_NAME).iso \
+		-boot d
 
 .PHONY: run-hdd-bios
 run-hdd-bios: $(IMAGE_NAME).hdd
-	qemu-system-x86_64 -M q35 -m 2G -hda $(IMAGE_NAME).hdd
+	qemu-system-x86_64 \
+		-M q35 \
+		-m 2G \
+		-hda $(IMAGE_NAME).hdd
 
 .PHONY: ovmf
 ovmf: ovmf-$(ARCH)
